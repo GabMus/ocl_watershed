@@ -8,7 +8,8 @@ QMAKE_CXXFLAGS += -std=c++0x
 LIBS += -lOpenCL
 
 DISTFILES += \
-    LICENSE
+    LICENSE \
+    ocl_source.cl
 
 copyfiles.commands = cp $$PWD/*.cl $$OUT_PWD/
 
