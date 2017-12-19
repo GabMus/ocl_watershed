@@ -25,27 +25,34 @@ void kernel find_minima(
 
 void kernel init_t0(
     global uint* t0_lattice,
+    global uint* t0_labels,
     int width,
     read_only image2d_t luma_pic,
     global uint* minima_value) {
 
-    t0_lattice[get_global_id(0)+(get_global_id(1)*width)] = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x <= *minima_value ? (uint)0 : (uint)MAX_INT;
+    uint pixval = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
+    uint pos = get_global_id(0)+(get_global_id(1)*width);
+    t0_lattice[pos] = pixval <= *minima_value ? (uint)0 : (uint)MAX_INT;
+    t0_labels[pos] = pixval <= *minima_value ? (uint)pos : (uint)0;
 }
 
-//void kernel automaton(global read_only image2d_t in_pic, global const uint32_t* t0_lattice, global uint32_t* t1_lattice) { // a same image cannot be rw
+void kernel automaton(
+    global read_only image2d_t in_pic,
+    global const uint32_t* t0_lattice,
+    global uint32_t* t1_lattice) { // a same image cannot be rw
 
-//    u_t
+    u_t
 
-//    read_imagef(in_pic, gauss_sampler, (int2){get_global_id(0)+i-1, get_global_id(1)+j-1}) * ck_gauss_5x[i+(j*5)];
-//    float4 n_pixel = (float4){0.0f, 0.0f, 0.0f, 0.0f};
+    read_imagef(in_pic, gauss_sampler, (int2){get_global_id(0)+i-1, get_global_id(1)+j-1}) * ck_gauss_5x[i+(j*5)];
+    float4 n_pixel = (float4){0.0f, 0.0f, 0.0f, 0.0f};
 
-//    #pragma unroll
-//    for (int i=0; i<5; i++) {
-//        #pragma unroll
-//        for (int j=0; j<5; j++) {
-//            n_pixel += read_imagef(in_pic, gauss_sampler, (int2){get_global_id(0)+i-1, get_global_id(1)+j-1}) * ck_gauss_5x[i+(j*5)];
-//        }
-//    }
+    #pragma unroll
+    for (int i=0; i<5; i++) {
+        #pragma unroll
+        for (int j=0; j<5; j++) {
+            n_pixel += read_imagef(in_pic, gauss_sampler, (int2){get_global_id(0)+i-1, get_global_id(1)+j-1}) * ck_gauss_5x[i+(j*5)];
+        }
+    }
 
-//    write_imagef(out_pic, (int2){get_global_id(0), get_global_id(1)},  n_pixel);
-//}
+    write_imagef(out_pic, (int2){get_global_id(0), get_global_id(1)},  n_pixel);
+}
