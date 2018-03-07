@@ -22,7 +22,7 @@
 #include "io_helper.hpp"
 #include "ocl_helper.hpp"
 
-#define BMP_PATH "/home/gabmus/test.ppm"
+#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers800.ppm"
 
 int main(int argc, char** argv) {
 
@@ -54,11 +54,9 @@ int main(int argc, char** argv) {
                  bmp_width << "x" << bmp_height <<
                  TERM_RESET << std::endl;
 
-    //BMPVEC bmp_BGR_data;
+
     BMPVEC bmp_RGBA_data;
-    //get_bitmap_data(bmp, bmp_BGR_data);
-    bgr2bgra(bmp,
-            bmp_RGBA_data);
+    bgr2bgra(bmp, bmp_RGBA_data);
 
     cl::Device default_device = ocl_get_default_device();
     cl::Context context({default_device});
@@ -95,7 +93,12 @@ int main(int argc, char** argv) {
                 &err);
     cl_check(err, "Creating output image");
 
-    cl::Buffer cl_minima_value(context, CL_MEM_READ_WRITE, sizeof(uint32_t));
+    uint32_t* host_minima_value = new uint32_t();
+    *host_minima_value = 256u;
+
+    cl::Buffer cl_minima_value(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeof(uint32_t), host_minima_value, &err);
+
+    cl_check(err, "Creating minima value buffer");
 
     cl::Buffer cl_t0_lattice(context, CL_MEM_READ_WRITE, sizeof(uint32_t)*bmp_width*bmp_height);
     cl::Buffer cl_t1_lattice(context, CL_MEM_READ_WRITE, sizeof(uint32_t)*bmp_width*bmp_height);
@@ -110,17 +113,14 @@ int main(int argc, char** argv) {
         std::cerr << TERM_RED <<
                      "Error Building: " <<
                      program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) <<
-                     TERM_RESET <<
-                     std::endl;
+                     TERM_RESET << std::endl;
         exit(1);
     }
 
-    cl::Kernel kernel_init_globals = cl::Kernel(program, "init_globals");
+    //cl::Kernel kernel_init_globals = cl::Kernel(program, "init_globals");
     cl::Kernel kernel_find_minima = cl::Kernel(program, "find_minima");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
     cl::Kernel kernel_automaton = cl::Kernel(program, "automaton");
-
-    kernel_init_globals.setArg(0, cl_minima_value);
 
     kernel_find_minima.setArg(0, cl_input_image);
     kernel_find_minima.setArg(1, cl_luma_image);
@@ -132,17 +132,21 @@ int main(int argc, char** argv) {
     kernel_init_t0.setArg(3, cl_luma_image);
     kernel_init_t0.setArg(4, cl_minima_value);
 
-    queue.enqueueNDRangeKernel(
-                kernel_init_globals,
-                cl::NullRange,
-                cl::NDRange(1),
-                cl::NullRange);
-
-    queue.enqueueNDRangeKernel(
+    queue.enqueueNDRangeKernel( //also builds cl_luma_image
                 kernel_find_minima,
                 cl::NullRange,
                 cl::NDRange(bmp_width, bmp_height),
                 cl::NullRange);
+
+#if DEBUG
+    queue.finish();
+    queue.enqueueReadBuffer(cl_minima_value, CL_TRUE, 0, sizeof(uint32_t), host_minima_value);
+    queue.finish();
+    std::cout << TERM_CYAN <<
+        "DEBUG: minima_value after find_minima: " <<
+        *host_minima_value <<
+        std::endl;
+#endif
 
     queue.enqueueNDRangeKernel(
                 kernel_init_t0,
@@ -150,23 +154,19 @@ int main(int argc, char** argv) {
                 cl::NDRange(bmp_width*bmp_height),
                 cl::NullRange);
 
-
-    for ()
-
     kernel_automaton.setArg(0, cl_luma_image);
-    kernel_automaton.setArg(1, );
-    kernel_automaton.setArg(2, );
-    kernel_automaton.setArg(3, );
+    kernel_automaton.setArg(1, bmp_width);
+    kernel_automaton.setArg(2, bmp_width*bmp_height);
+    kernel_automaton.setArg(3, cl_t0_lattice);
+    kernel_automaton.setArg(4, cl_t0_labels);
+    kernel_automaton.setArg(5, cl_t1_lattice);
+    kernel_automaton.setArg(6, cl_t1_labels);
 
     queue.enqueueNDRangeKernel(
                 kernel_automaton,
                 cl::NullRange,
                 cl::NDRange(bmp_width*bmp_height),
                 cl::NullRange);
-
-
-
-
 
     queue.finish();
 
