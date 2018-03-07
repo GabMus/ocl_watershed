@@ -126,12 +126,6 @@ int main(int argc, char** argv) {
     kernel_find_minima.setArg(1, cl_luma_image);
     kernel_find_minima.setArg(2, cl_minima_value);
 
-    kernel_init_t0.setArg(0, cl_t0_lattice);
-    kernel_init_t0.setArg(1, cl_t0_labels);
-    kernel_init_t0.setArg(2, bmp_width);
-    kernel_init_t0.setArg(3, cl_luma_image);
-    kernel_init_t0.setArg(4, cl_minima_value);
-
     queue.enqueueNDRangeKernel( //also builds cl_luma_image
                 kernel_find_minima,
                 cl::NullRange,
@@ -148,6 +142,12 @@ int main(int argc, char** argv) {
         std::endl;
 #endif
 
+    kernel_init_t0.setArg(0, cl_t0_lattice);
+    kernel_init_t0.setArg(1, cl_t0_labels);
+    kernel_init_t0.setArg(2, bmp_width);
+    kernel_init_t0.setArg(3, cl_luma_image);
+    kernel_init_t0.setArg(4, cl_minima_value);
+
     queue.enqueueNDRangeKernel(
                 kernel_init_t0,
                 cl::NullRange,
@@ -156,11 +156,12 @@ int main(int argc, char** argv) {
 
     kernel_automaton.setArg(0, cl_luma_image);
     kernel_automaton.setArg(1, bmp_width);
-    kernel_automaton.setArg(2, bmp_width*bmp_height);
-    kernel_automaton.setArg(3, cl_t0_lattice);
-    kernel_automaton.setArg(4, cl_t0_labels);
-    kernel_automaton.setArg(5, cl_t1_lattice);
-    kernel_automaton.setArg(6, cl_t1_labels);
+    kernel_automaton.setArg(2, bmp_height);
+    kernel_automaton.setArg(3, bmp_width*bmp_height);
+    kernel_automaton.setArg(4, cl_t0_lattice);
+    kernel_automaton.setArg(5, cl_t0_labels);
+    kernel_automaton.setArg(6, cl_t1_lattice);
+    kernel_automaton.setArg(7, cl_t1_labels);
 
     queue.enqueueNDRangeKernel(
                 kernel_automaton,
@@ -204,7 +205,7 @@ int main(int argc, char** argv) {
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
-        "/home/gabmus/ocl_out_fuck.ppm");
+        "/home/gabmus/Development/ocl_watershed_misc/ocl_out.ppm");
 
     return 0;
 }
