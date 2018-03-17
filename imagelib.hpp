@@ -96,3 +96,50 @@ void r2rgb(unsigned char* invec, int size, unsigned char* outvec) {
         k+=3;
     }
 }
+
+bool value_in_arr(uint32_t val, uint32_t* arr, int size) {
+    for (int i=0; i<size; i++) {
+        if (arr[i] == val) return true;
+    }
+    return false;
+}
+
+uint32_t find_mean_color(int* arr, int size) {
+    uint32_t sum=0;
+    int pixels=0;
+    for (int i=0; i<size; i++) {
+        if (arr[i]!=-1) {
+            sum+=arr[i];
+            pixels++;
+        }
+    }
+    return (uint32_t)(sum/pixels);
+}
+
+void color_watershed(uint8_t* luma_image, int width, int height, uint32_t* labels, uint32_t* out_image) {
+    uint32_t visited_labels[width*height] = {0};
+    int visited_labels_index=0;
+
+    for (int i=0; i<width*height; i++) {
+        //std::cout << "lables[" << i << "]: " << labels[i] << std::endl;
+        if (!value_in_arr(labels[i], visited_labels, width*height)) {
+            int current_label_colors[width*height] = {-1};
+            int current_label_colors_index=0;
+            for (int j=0; j<width*height; j++) {
+                //std::cout << luma_image[0] << std::endl;
+                if (labels[i] == labels[j]) {
+                    current_label_colors[current_label_colors_index]=luma_image[j];
+                    current_label_colors_index++;
+                }
+            }
+            uint32_t mean_color=find_mean_color(current_label_colors, current_label_colors_index+1);
+            for (int j=0; j<width*height; j++) {
+                if (labels[i] == labels[j]) {
+                    out_image[j]=mean_color;
+                }
+            }
+            visited_labels[visited_labels_index] = labels[i];
+            visited_labels_index++;
+        }
+    }
+}

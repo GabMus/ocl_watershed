@@ -71,5 +71,5 @@ void kernel automaton(
 
     t1_lattice[pos] = t0_lattice[pos] < u_t_val ? t0_lattice[pos] : u_t_val;
 
-    t1_labels[pos] = t0_labels[t0_lattice[pos] < u_t_val ? pos : u_t_pos];
+    t1_labels[pos] = t0_lattice[pos] < u_t_val ? pos : u_t_pos;
 }

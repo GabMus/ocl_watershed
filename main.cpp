@@ -22,7 +22,7 @@
 #include "io_helper.hpp"
 #include "ocl_helper.hpp"
 
-#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers800.ppm"
+#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers100.ppm"
 
 int main(int argc, char** argv) {
 
@@ -139,7 +139,8 @@ int main(int argc, char** argv) {
     std::cout << TERM_CYAN <<
         "DEBUG: minima_value after find_minima: " <<
         *host_minima_value <<
-        std::endl;
+        std::endl <<
+        TERM_RESET;
 #endif
 
     kernel_init_t0.setArg(0, cl_t0_lattice);
@@ -154,22 +155,46 @@ int main(int argc, char** argv) {
                 cl::NDRange(bmp_width*bmp_height),
                 cl::NullRange);
 
-    kernel_automaton.setArg(0, cl_luma_image);
-    kernel_automaton.setArg(1, bmp_width);
-    kernel_automaton.setArg(2, bmp_height);
-    kernel_automaton.setArg(3, bmp_width*bmp_height);
-    kernel_automaton.setArg(4, cl_t0_lattice);
-    kernel_automaton.setArg(5, cl_t0_labels);
-    kernel_automaton.setArg(6, cl_t1_lattice);
-    kernel_automaton.setArg(7, cl_t1_labels);
 
-    queue.enqueueNDRangeKernel(
-                kernel_automaton,
-                cl::NullRange,
-                cl::NDRange(bmp_width*bmp_height),
-                cl::NullRange);
+    for (int i=0; i<=10; i++) {
+        if (!(i%2)) {
+            std::cout << TERM_GREEN << "i: " << i << " - " << "0 --> 1\n" << TERM_RESET;
+            kernel_automaton.setArg(0, cl_luma_image);
+            kernel_automaton.setArg(1, bmp_width);
+            kernel_automaton.setArg(2, bmp_height);
+            kernel_automaton.setArg(3, bmp_width*bmp_height);
+            kernel_automaton.setArg(4, cl_t0_lattice);
+            kernel_automaton.setArg(5, cl_t0_labels);
+            kernel_automaton.setArg(6, cl_t1_lattice);
+            kernel_automaton.setArg(7, cl_t1_labels);
 
-    queue.finish();
+            queue.enqueueNDRangeKernel(
+                        kernel_automaton,
+                        cl::NullRange,
+                        cl::NDRange(bmp_width*bmp_height),
+                        cl::NullRange);
+
+            queue.finish();
+        } else {
+            std::cout << TERM_RED << "i: " << i << " - " << "1 --> 0\n" << TERM_RESET;
+            kernel_automaton.setArg(0, cl_luma_image);
+            kernel_automaton.setArg(1, bmp_width);
+            kernel_automaton.setArg(2, bmp_height);
+            kernel_automaton.setArg(3, bmp_width*bmp_height);
+            kernel_automaton.setArg(4, cl_t1_lattice);
+            kernel_automaton.setArg(5, cl_t1_labels);
+            kernel_automaton.setArg(6, cl_t0_lattice);
+            kernel_automaton.setArg(7, cl_t0_labels);
+
+            queue.enqueueNDRangeKernel(
+                        kernel_automaton,
+                        cl::NullRange,
+                        cl::NDRange(bmp_width*bmp_height),
+                        cl::NullRange);
+
+            queue.finish();
+        }
+    }
 
     uint32_t* host_outvec = new uint32_t[bmp_width*bmp_height];
 
@@ -206,6 +231,21 @@ int main(int argc, char** argv) {
         bmp_width,
         bmp_height,
         "/home/gabmus/Development/ocl_watershed_misc/ocl_out.ppm");
+
+    uint32_t* out_labels = new uint32_t[bmp_width*bmp_height];
+    queue.enqueueReadBuffer(cl_t1_labels, CL_TRUE, 0, sizeof(uint32_t)*bmp_width*bmp_height, out_labels);
+
+    uint32_t* out_image = new uint32_t[bmp_width*bmp_height];
+    color_watershed(host_outimage, bmp_width, bmp_height, out_labels, out_image);
+
+    uint8_t* rgb_outimage = new uint8_t[bmp_width*bmp_height*3];
+    r2rgb((uint8_t*)out_image, bmp_width*bmp_height, rgb_outimage);
+
+    write_ppm((uint8_t*)rgb_outimage,
+        3*bmp_width*bmp_height,
+        bmp_width,
+        bmp_height,
+        "/home/gabmus/Development/ocl_watershed_misc/ocl_out_watershed.ppm");
 
     return 0;
 }
