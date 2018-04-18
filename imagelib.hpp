@@ -116,30 +116,18 @@ uint32_t find_mean_color(int* arr, int size) {
     return (uint32_t)(sum/pixels);
 }
 
-void color_watershed(uint8_t* luma_image, int width, int height, uint32_t* labels, uint32_t* out_image) {
-    uint32_t visited_labels[width*height] = {0};
-    int visited_labels_index=0;
-
-    for (int i=0; i<width*height; i++) {
-        //std::cout << "lables[" << i << "]: " << labels[i] << std::endl;
-        if (!value_in_arr(labels[i], visited_labels, width*height)) {
-            int current_label_colors[width*height] = {-1};
-            int current_label_colors_index=0;
-            for (int j=0; j<width*height; j++) {
-                //std::cout << luma_image[0] << std::endl;
-                if (labels[i] == labels[j]) {
-                    current_label_colors[current_label_colors_index]=luma_image[j];
-                    current_label_colors_index++;
-                }
+void color_watershed(uint32_t* labels, uint8_t* image, int width, int height, uint8_t* outimage) {
+    for (int x=0; x<width; x++) {
+        for (int y=0; y<height; y++) {
+            int pos = x + (width * y);
+            
+#if 0
+            if (labels[pos] != pos-1 && labels[pos] != pos) {
+                std::cout << "DEBUG: There's a difference!\n";
+                std::cout << labels[pos] << " - " << pos << std::endl;
             }
-            uint32_t mean_color=find_mean_color(current_label_colors, current_label_colors_index+1);
-            for (int j=0; j<width*height; j++) {
-                if (labels[i] == labels[j]) {
-                    out_image[j]=mean_color;
-                }
-            }
-            visited_labels[visited_labels_index] = labels[i];
-            visited_labels_index++;
+#endif
+            outimage[pos] = image[labels[pos]];
         }
     }
 }

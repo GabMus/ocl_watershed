@@ -22,7 +22,7 @@
 #include "io_helper.hpp"
 #include "ocl_helper.hpp"
 
-#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers100.ppm"
+#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers800.ppm"
 
 int main(int argc, char** argv) {
 
@@ -83,6 +83,17 @@ int main(int argc, char** argv) {
                 &err);
     cl_check(err, "Creating luma image");
 
+    cl::Image2D cl_gradient_image = cl::Image2D(
+                context,
+                CL_MEM_READ_WRITE,
+                cl::ImageFormat(CL_R, CL_UNSIGNED_INT8),
+                bmp_width, bmp_height,
+                0,
+                NULL,
+                &err);
+    cl_check(err, "Creating gradient image");
+
+
     cl::Image2D cl_output_image = cl::Image2D(
                 context,
                 CL_MEM_WRITE_ONLY,
@@ -118,21 +129,45 @@ int main(int argc, char** argv) {
     }
 
     //cl::Kernel kernel_init_globals = cl::Kernel(program, "init_globals");
+    cl::Kernel kernel_make_luma_image = cl::Kernel(program, "make_luma_image");
+    cl::Kernel kernel_make_gradient = cl::Kernel(program, "make_gradient");
     cl::Kernel kernel_find_minima = cl::Kernel(program, "find_minima");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
     cl::Kernel kernel_automaton = cl::Kernel(program, "automaton");
 
-    kernel_find_minima.setArg(0, cl_input_image);
-    kernel_find_minima.setArg(1, cl_luma_image);
-    kernel_find_minima.setArg(2, cl_minima_value);
+    kernel_make_luma_image.setArg(0, cl_input_image);
+    kernel_make_luma_image.setArg(1, cl_luma_image);
 
-    queue.enqueueNDRangeKernel( //also builds cl_luma_image
+    queue.enqueueNDRangeKernel(
+            kernel_make_luma_image,
+            cl::NullRange,
+            cl::NDRange(bmp_width, bmp_height),
+            cl::NullRange);
+
+    queue.finish();
+
+    kernel_make_gradient.setArg(0, cl_luma_image);
+    kernel_make_gradient.setArg(1, cl_gradient_image);
+    
+    queue.enqueueNDRangeKernel(
+            kernel_make_gradient,
+            cl::NullRange,
+            cl::NDRange(bmp_width, bmp_height),
+            cl::NullRange);
+
+    queue.finish();
+
+    kernel_find_minima.setArg(0, cl_gradient_image);
+    kernel_find_minima.setArg(1, cl_minima_value);
+
+    queue.enqueueNDRangeKernel( // OLD: NOT ANYMORE //~~~also builds cl_luma_image~~~
                 kernel_find_minima,
                 cl::NullRange,
                 cl::NDRange(bmp_width, bmp_height),
                 cl::NullRange);
 
-#if DEBUG
+#if 1
+    //DEBUG
     queue.finish();
     queue.enqueueReadBuffer(cl_minima_value, CL_TRUE, 0, sizeof(uint32_t), host_minima_value);
     queue.finish();
@@ -146,7 +181,7 @@ int main(int argc, char** argv) {
     kernel_init_t0.setArg(0, cl_t0_lattice);
     kernel_init_t0.setArg(1, cl_t0_labels);
     kernel_init_t0.setArg(2, bmp_width);
-    kernel_init_t0.setArg(3, cl_luma_image);
+    kernel_init_t0.setArg(3, cl_gradient_image);
     kernel_init_t0.setArg(4, cl_minima_value);
 
     queue.enqueueNDRangeKernel(
@@ -235,13 +270,14 @@ int main(int argc, char** argv) {
     uint32_t* out_labels = new uint32_t[bmp_width*bmp_height];
     queue.enqueueReadBuffer(cl_t1_labels, CL_TRUE, 0, sizeof(uint32_t)*bmp_width*bmp_height, out_labels);
 
-    uint32_t* out_image = new uint32_t[bmp_width*bmp_height];
-    color_watershed(host_outimage, bmp_width, bmp_height, out_labels, out_image);
-
+    uint8_t* r_outimage = new uint8_t[bmp_width*bmp_height];
     uint8_t* rgb_outimage = new uint8_t[bmp_width*bmp_height*3];
-    r2rgb((uint8_t*)out_image, bmp_width*bmp_height, rgb_outimage);
 
-    write_ppm((uint8_t*)rgb_outimage,
+    color_watershed(out_labels, (uint8_t*)host_outimage, bmp_width, bmp_height, r_outimage);
+
+    r2rgb(r_outimage, bmp_width*bmp_height, rgb_outimage);
+
+    write_ppm(rgb_outimage,
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
