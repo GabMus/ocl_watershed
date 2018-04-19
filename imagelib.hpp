@@ -97,6 +97,12 @@ void r2rgb(unsigned char* invec, int size, unsigned char* outvec) {
     }
 }
 
+void r32_2_r8(uint32_t* invec, int size, unsigned char* outvec) {
+    for (int i=0; i<size; i++) {
+        outvec[i] = invec[i] >> 24;
+    }
+}
+
 bool value_in_arr(uint32_t val, uint32_t* arr, int size) {
     for (int i=0; i<size; i++) {
         if (arr[i] == val) return true;
@@ -127,6 +133,8 @@ void color_watershed(uint32_t* labels, uint8_t* image, int width, int height, ui
                 std::cout << labels[pos] << " - " << pos << std::endl;
             }
 #endif
+            //std::cout << "DEBOOG: " << labels[359200] << std::endl;
+            //outimage[pos] = !!labels[pos] ? image[labels[pos]-1] : 0;
             outimage[pos] = image[labels[pos]];
         }
     }

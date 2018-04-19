@@ -5,7 +5,7 @@ constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_
 #define R_LUMA_MULT 0.2126f
 #define G_LUMA_MULT 0.7152f
 #define B_LUMA_MULT 0.0722f
-#define MAX_INT 9999
+#define MAX_INT UINT_MAX
 
 //void kernel init_globals(global uint* minima_value) {
 //    *minima_value=255u;
@@ -13,9 +13,9 @@ constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_
 
 /**/
 constant int ck_gradientx[9] = { // gradient horizontal
-	-1,	-1,	-1,
-	0,	0,	0,
-	1,	1,	1
+        0,	-1,	0,
+        -1,	0,	1,
+        0,	1,	0
 };
 /**/
 
@@ -73,8 +73,8 @@ void kernel init_t0(
 
     uint pixval = read_imageui(gradient_pic, (int2){get_global_id(0), get_global_id(1)}).x;
     uint pos = get_global_id(0)+(get_global_id(1)*width);
-    t0_lattice[pos] = pixval <= *minima_value ? (uint)0 : (uint)MAX_INT;
-    t0_labels[pos] = pixval <= *minima_value ? (uint)pos : (uint)0;
+    t0_lattice[pos] = pixval == 0 ? (uint)0 : (uint)MAX_INT;
+    t0_labels[pos] = pixval == 0 ? (uint)pos : (uint)0;
 }
 
 void kernel automaton(
@@ -90,7 +90,7 @@ void kernel automaton(
     uint pos = get_global_id(0)+(get_global_id(1)*width);
     // x: north, y: east, z: south, t: west
 
-    uint4 neighborhood_positions = (uint4){
+    uint4 neib_pos = (uint4){
         get_global_id(1) != 0 ? pos-width : pos, // exists if it's not the first row
         get_global_id(0) != (width-1) ? pos+1 : pos, // exists if it's not the last column
         get_global_id(1) != (height-1) ? pos+width : pos, // exists if it's not the last row
@@ -99,25 +99,28 @@ void kernel automaton(
 
     uint pixel = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
 
-    uint2 u_t=(uint2){MAX_INT, 9};
+    uint2 u_t=(uint2){
+       t0_lattice[pos],
+       pos
+    };
 
-    u_t = (neighborhood_positions.x != pos && u_t.x >= t0_lattice[neighborhood_positions.x] + pixel) ?
-        (uint2){t0_lattice[neighborhood_positions.x] + pixel, neighborhood_positions.x} : u_t;
-
-    u_t = (neighborhood_positions.y != pos && u_t >= t0_lattice[neighborhood_positions.y] + pixel) ?
-        (uint2){t0_lattice[neighborhood_positions.y] + pixel, neighborhood_positions.y} : u_t;
-
-    u_t = (neighborhood_positions.z != pos && u_t >= t0_lattice[neighborhood_positions.z] + pixel) ?
-        (uint2){t0_lattice[neighborhood_positions.z] + pixel, neighborhood_positions.z} : u_t;
-
-    u_t = (neighborhood_positions.w != pos && u_t >= t0_lattice[neighborhood_positions.w] + pixel) ?
-        (uint2){t0_lattice[neighborhood_positions.w] + pixel, neighborhood_positions.w} : u_t;
+    /*uint2 u_t=(uint2){
+        add_sat((pixel*(pos != neib_pos.x)), t0_lattice[neib_pos.x]),
+        neib_pos.x
+    };*/
 
 
-    uint u_t_val = u_t.x;
-    uint u_t_pos = u_t.y;
+    uint u_tx = add_sat(t0_lattice[neib_pos.x], (pixel*(pos!=neib_pos.x)));
+    uint u_ty = add_sat(t0_lattice[neib_pos.y], (pixel*(pos!=neib_pos.y)));
+    uint u_tz = add_sat(t0_lattice[neib_pos.z], (pixel*(pos!=neib_pos.z)));
+    uint u_tw = add_sat(t0_lattice[neib_pos.w], (pixel*(pos!=neib_pos.w)));
 
-    t1_lattice[pos] = t0_lattice[pos] < u_t_val ? t0_lattice[pos] : u_t_val;
+    u_t = u_t.x > u_tx ? (uint2){u_tx, neib_pos.x} : u_t;
+    u_t = u_t.x > u_ty ? (uint2){u_ty, neib_pos.y} : u_t;
+    u_t = u_t.x > u_tz ? (uint2){u_tz, neib_pos.z} : u_t;
+    u_t = u_t.x > u_tw ? (uint2){u_tw, neib_pos.w} : u_t;
 
-    t1_labels[pos] = t0_lattice[pos] < u_t_val ? t0_labels[pos] : t0_labels[u_t_pos];
+    t1_lattice[pos] = u_t.x;
+
+    t1_labels[pos] = t0_labels[u_t.y];
 }
