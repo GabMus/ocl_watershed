@@ -22,7 +22,7 @@
 #include "io_helper.hpp"
 #include "ocl_helper.hpp"
 
-#define BMP_PATH "/home/gabmus/watershed_misc/soluscat.ppm"
+#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers100.ppm"
 
 int main(int argc, char** argv) {
 
@@ -208,16 +208,16 @@ int main(int argc, char** argv) {
         bmp_width*bmp_height,
         (unsigned char*)rgb_pixelvec_lattice);
 
-    write_ppm(rgb_pixelvec_lattice,
+    /*write_ppm(rgb_pixelvec_lattice,
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
-        "/home/gabmus/watershed_misc/ocl_out_lattice.ppm");
+        "/home/gabmus/watershed_misc/ocl_out_lattice.ppm");*/
 
 #endif
 
-    for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
-        std::cout << TERM_GREEN << "i: " << i << " - " << "0 --> 1\n" << TERM_RESET;
+    for (int i=0; i<=std::max(bmp_width, bmp_height)*50; i++) {
+        //std::cout << TERM_GREEN << "i: " << i << " - " << "0 --> 1\n" << TERM_RESET;
         kernel_automaton.setArg(0, cl_luma_image);
         kernel_automaton.setArg(1, bmp_width);
         kernel_automaton.setArg(2, bmp_height);
@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
-        "/home/gabmus/watershed_misc/ocl_out.ppm");
+        "/home/gabmus/Development/ocl_watershed_misc/ocl_out.ppm");
 
     uint32_t* out_labels = new uint32_t[bmp_width*bmp_height];
     queue.enqueueReadBuffer(cl_t1_labels, CL_TRUE, 0, sizeof(uint32_t)*bmp_width*bmp_height, out_labels);
@@ -288,7 +288,7 @@ int main(int argc, char** argv) {
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
-        "/home/gabmus/watershed_misc/ocl_out_watershed.ppm");
+        "/home/gabmus/Development/ocl_watershed_misc/ocl_out_watershed.ppm");
 
     return 0;
 }

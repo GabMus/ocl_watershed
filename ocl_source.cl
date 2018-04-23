@@ -1,6 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
-constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
+constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;
 
 #define R_LUMA_MULT 0.2126f
 #define G_LUMA_MULT 0.7152f
