@@ -131,7 +131,6 @@ int main(int argc, char** argv) {
     //cl::Kernel kernel_init_globals = cl::Kernel(program, "init_globals");
     cl::Kernel kernel_make_luma_image = cl::Kernel(program, "make_luma_image");
     cl::Kernel kernel_make_gradient = cl::Kernel(program, "make_gradient");
-    cl::Kernel kernel_find_minima = cl::Kernel(program, "find_minima");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
     cl::Kernel kernel_automaton = cl::Kernel(program, "automaton");
 
@@ -156,27 +155,6 @@ int main(int argc, char** argv) {
             cl::NullRange);
 
     queue.finish();
-
-    kernel_find_minima.setArg(0, cl_gradient_image);
-    kernel_find_minima.setArg(1, cl_minima_value);
-
-    queue.enqueueNDRangeKernel( // OLD: NOT ANYMORE //~~~also builds cl_luma_image~~~
-                kernel_find_minima,
-                cl::NullRange,
-                cl::NDRange(bmp_width, bmp_height),
-                cl::NullRange);
-
-#if 1
-    //DEBUG
-    queue.finish();
-    queue.enqueueReadBuffer(cl_minima_value, CL_TRUE, 0, sizeof(uint32_t), host_minima_value);
-    queue.finish();
-    std::cout << TERM_CYAN <<
-        "DEBUG: minima_value after find_minima: " <<
-        *host_minima_value <<
-        std::endl <<
-        TERM_RESET;
-#endif
 
     kernel_init_t0.setArg(0, cl_t0_lattice);
     kernel_init_t0.setArg(1, cl_t0_labels);
@@ -216,7 +194,7 @@ int main(int argc, char** argv) {
 
 #endif
 
-    for (int i=0; i<=std::max(bmp_width, bmp_height)*50; i++) {
+    for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
         //std::cout << TERM_GREEN << "i: " << i << " - " << "0 --> 1\n" << TERM_RESET;
         kernel_automaton.setArg(0, cl_luma_image);
         kernel_automaton.setArg(1, bmp_width);
