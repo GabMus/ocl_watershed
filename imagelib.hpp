@@ -133,8 +133,10 @@ void color_watershed(uint32_t* labels, uint8_t* image, int width, int height, ui
                 std::cout << labels[pos] << " - " << pos << std::endl;
             }
 #endif
-            //std::cout << "DEBOOG: " << labels[359200] << std::endl;
-            outimage[pos] = labels[pos] ? image[labels[pos]-1] : 0;
+            //std::cout << "DEBOOG: " << labels[pos] << std::endl;
+            uint32_t index = labels[pos];
+            if (index >= width*height) index = width*height;
+            outimage[pos] = index ? image[index-1] : 0;
             //outimage[pos] = image[labels[pos]];
         }
     }

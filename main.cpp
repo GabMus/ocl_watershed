@@ -22,7 +22,7 @@
 #include "io_helper.hpp"
 #include "ocl_helper.hpp"
 
-#define BMP_PATH "/home/gabmus/Development/ocl_watershed_misc/redflowers100.ppm"
+#define BMP_PATH "/home/gabmus/Development/lena.ppm"
 
 int main(int argc, char** argv) {
 
