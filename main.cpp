@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
     cl::Image2D cl_output_image = cl::Image2D(
                 context,
                 CL_MEM_WRITE_ONLY,
-                cl::ImageFormat(CL_R, CL_UNSIGNED_INT8),
+                cl::ImageFormat(CL_RGBA, CL_UNSIGNED_INT8),
                 bmp_width, bmp_height,
                 0,
                 NULL,
@@ -128,11 +128,11 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    //cl::Kernel kernel_init_globals = cl::Kernel(program, "init_globals");
     cl::Kernel kernel_make_luma_image = cl::Kernel(program, "make_luma_image");
     cl::Kernel kernel_make_gradient = cl::Kernel(program, "make_gradient");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
     cl::Kernel kernel_automaton = cl::Kernel(program, "automaton");
+    cl::Kernel kernel_color_watershed = cl::Kernel(program, "color_watershed");
 
     kernel_make_luma_image.setArg(0, cl_input_image);
     kernel_make_luma_image.setArg(1, cl_luma_image);
@@ -168,34 +168,10 @@ int main(int argc, char** argv) {
                 cl::NDRange(bmp_width, bmp_height),
                 cl::NullRange);
 
-#if 1
-
     queue.finish();
-    uint32_t* out_lattice = new uint32_t[bmp_width*bmp_height];
-    queue.enqueueReadBuffer(cl_t0_lattice, CL_TRUE, 0, sizeof(uint32_t)*bmp_width*bmp_height, out_lattice);
 
-    uint8_t* r8_pixelvec_lattice = new uint8_t[bmp_width*bmp_height];
-    r32_2_r8(
-            out_lattice,
-            bmp_width*bmp_height,
-            r8_pixelvec_lattice
-    );
-    uint8_t* rgb_pixelvec_lattice =  new uint8_t[bmp_width*bmp_height*3];
-
-    r2rgb((unsigned char*)r8_pixelvec_lattice,
-        bmp_width*bmp_height,
-        (unsigned char*)rgb_pixelvec_lattice);
-
-    /*write_ppm(rgb_pixelvec_lattice,
-        3*bmp_width*bmp_height,
-        bmp_width,
-        bmp_height,
-        "/home/gabmus/watershed_misc/ocl_out_lattice.ppm");*/
-
-#endif
 
     for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
-        //std::cout << TERM_GREEN << "i: " << i << " - " << "0 --> 1\n" << TERM_RESET;
         kernel_automaton.setArg(0, cl_luma_image);
         kernel_automaton.setArg(1, bmp_width);
         kernel_automaton.setArg(2, bmp_height);
@@ -208,7 +184,7 @@ int main(int argc, char** argv) {
         queue.enqueueNDRangeKernel(
                     kernel_automaton,
                     cl::NullRange,
-                    cl::NDRange(bmp_width*bmp_height),
+                    cl::NDRange(bmp_width, bmp_height),
                     cl::NullRange);
 
         queue.finish();
@@ -216,11 +192,24 @@ int main(int argc, char** argv) {
         std::swap(cl_t0_lattice, cl_t1_lattice);
     }
 
-    uint32_t* host_outvec = new uint32_t[bmp_width*bmp_height];
+    queue.finish();
 
-    queue.enqueueReadBuffer(cl_t0_lattice, CL_TRUE, 0, sizeof(uint32_t)*bmp_width*bmp_height, host_outvec);
+    kernel_color_watershed.setArg(0, cl_input_image);
+    kernel_color_watershed.setArg(1, bmp_width);
+    kernel_color_watershed.setArg(2, bmp_height);
+    kernel_color_watershed.setArg(3, cl_t1_labels);
+    kernel_color_watershed.setArg(4, cl_output_image);
 
-    uint8_t* host_outimage = new uint8_t[bmp_width*bmp_height];
+    queue.enqueueNDRangeKernel(
+                    kernel_color_watershed,
+                    cl::NullRange,
+                    cl::NDRange(bmp_width, bmp_height),
+                    cl::NullRange);
+
+    queue.finish();
+
+    uint8_t* host_outimage = new uint8_t[bmp_width*bmp_height*4];
+    uint8_t* rgb_outimage = new uint8_t[bmp_width*bmp_height*3];
 
     cl::size_t<3> ri_origin;
     ri_origin[0] = 0;
@@ -231,7 +220,7 @@ int main(int argc, char** argv) {
     ri_region[1] = bmp_height;
     ri_region[2] = 1;
     err = queue.enqueueReadImage(
-                        cl_luma_image,
+                        cl_output_image,
                         CL_TRUE,
                         ri_origin,
                         ri_region,
@@ -240,33 +229,17 @@ int main(int argc, char** argv) {
                         host_outimage);
     cl_check(err, "Reading image from device");
 
-    uint8_t* rgb_pixelvec =  new uint8_t[bmp_width*bmp_height*3];
-
-    r2rgb((unsigned char*)host_outimage,
+    rgba2rgb(
+        host_outimage,
         bmp_width*bmp_height,
-        (unsigned char*)rgb_pixelvec);
-
-    write_ppm(rgb_pixelvec,
-        3*bmp_width*bmp_height,
-        bmp_width,
-        bmp_height,
-        "/home/gabmus/Development/ocl_watershed_misc/ocl_out.ppm");
-
-    uint32_t* out_labels = new uint32_t[bmp_width*bmp_height];
-    queue.enqueueReadBuffer(cl_t1_labels, CL_TRUE, 0, sizeof(uint32_t)*bmp_width*bmp_height, out_labels);
-
-    uint8_t* r_outimage = new uint8_t[bmp_width*bmp_height];
-    uint8_t* rgb_outimage = new uint8_t[bmp_width*bmp_height*3];
-
-    color_watershed(out_labels, (uint8_t*)host_outimage, bmp_width, bmp_height, r_outimage);
-
-    r2rgb(r_outimage, bmp_width*bmp_height, rgb_outimage);
+        rgb_outimage
+    );
 
     write_ppm(rgb_outimage,
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
-        "/home/gabmus/Development/ocl_watershed_misc/ocl_out_watershed.ppm");
+        "/home/gabmus/Development/ocl_watershed_misc/ocl_out.ppm");
 
     return 0;
 }

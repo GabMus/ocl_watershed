@@ -6,25 +6,26 @@ constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_
 #define G_LUMA_MULT 0.7152f
 #define B_LUMA_MULT 0.0722f
 #define MAX_INT UINT_MAX
+#define LAPLACIAN 0
 
 //void kernel init_globals(global uint* minima_value) {
 //    *minima_value=255u;
 //}
 
-/*
-constant int ck_gradientx[9] = { // gradient horizontal
-        0,	-1,	0,
-        -1,	0,	1,
-        0,	1,	0
-};
-*/
-/**/
+#if LAPLACIAN
 constant int ck_gradientx[9] = { // gradient horizontal
         -1,	-1,	-1,
         -1,	 8,	-1,
         -1,	-1,	-1
 };
-/**/
+#else
+constant int ck_gradientx[9] = { // gradient horizontal
+        0,	-1,	0,
+        -1,	0,	1,
+        0,	1,	0
+};
+#endif
+
 /*
 constant int ck_gradientx[9] = { // Edge
 	0,	-1,	0,
@@ -101,23 +102,39 @@ void kernel automaton(
        pos
     };
 
-    /*uint2 u_t=(uint2){
-        add_sat((pixel*(pos != neib_pos.x)), t0_lattice[neib_pos.x]),
-        neib_pos.x
-    };*/
-
-
     uint u_tx = add_sat(t0_lattice[neib_pos.x], (pixel*(pos!=neib_pos.x)));
     uint u_ty = add_sat(t0_lattice[neib_pos.y], (pixel*(pos!=neib_pos.y)));
     uint u_tz = add_sat(t0_lattice[neib_pos.z], (pixel*(pos!=neib_pos.z)));
     uint u_tw = add_sat(t0_lattice[neib_pos.w], (pixel*(pos!=neib_pos.w)));
 
-    u_t = u_t.x > u_tx && pos!=neib_pos.x ? (uint2){u_tx, neib_pos.x} : u_t;
-    u_t = u_t.x > u_ty && pos!=neib_pos.y ? (uint2){u_ty, neib_pos.y} : u_t;
-    u_t = u_t.x > u_tz && pos!=neib_pos.z ? (uint2){u_tz, neib_pos.z} : u_t;
-    u_t = u_t.x > u_tw && pos!=neib_pos.w ? (uint2){u_tw, neib_pos.w} : u_t;
+    u_t = u_t.x > u_tx ? (uint2){u_tx, neib_pos.x} : u_t;
+    u_t = u_t.x > u_ty ? (uint2){u_ty, neib_pos.y} : u_t;
+    u_t = u_t.x > u_tz ? (uint2){u_tz, neib_pos.z} : u_t;
+    u_t = u_t.x > u_tw ? (uint2){u_tw, neib_pos.w} : u_t;
 
     t1_lattice[pos] = u_t.x;
 
     t1_labels[pos] = t0_labels[u_t.y];
+}
+
+void kernel color_watershed(
+    read_only image2d_t original,
+    int width,
+    int height,
+    global const uint* labels,
+    write_only image2d_t outimage) {
+
+    int pos = get_global_id(0) + (get_global_id(1) * width); 
+    int index = labels[pos];
+    write_imageui(
+        outimage,
+        (int2){get_global_id(0), get_global_id(1)},
+        read_imageui(
+            original,
+            (int2){
+                index % width,
+                index / width
+            }
+        )
+    );
 }

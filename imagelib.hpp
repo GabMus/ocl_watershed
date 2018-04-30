@@ -65,14 +65,13 @@ void bgr2bgra(BMPVEC& rawbmp, BMPVEC& bgravec) {
     }
 }
 
-void bgra2rgb(float* invec, int size, unsigned char* outvec) {
+void rgba2rgb(unsigned char* invec, int size, unsigned char* outvec) {
     size *= 3;
-    unsigned char* p = reinterpret_cast<unsigned char*>(invec);
     int k=0;
     for (int i=0; i<size; i+=3) {
-        outvec[size-1-i] = p[k];
-        outvec[size-1-(i+1)] = p[k+1];
-        outvec[size-1-(i+2)] = p[k+2];
+        outvec[i] = invec[k];
+        outvec[i+1] = invec[k+1];
+        outvec[i+2] = invec[k+2];
         k+=4;
     }
 }
@@ -95,31 +94,6 @@ void r2rgb(unsigned char* invec, int size, unsigned char* outvec) {
         outvec[k+2] = invec[i];
         k+=3;
     }
-}
-
-void r32_2_r8(uint32_t* invec, int size, unsigned char* outvec) {
-    for (int i=0; i<size; i++) {
-        outvec[i] = invec[i] >> 24;
-    }
-}
-
-bool value_in_arr(uint32_t val, uint32_t* arr, int size) {
-    for (int i=0; i<size; i++) {
-        if (arr[i] == val) return true;
-    }
-    return false;
-}
-
-uint32_t find_mean_color(int* arr, int size) {
-    uint32_t sum=0;
-    int pixels=0;
-    for (int i=0; i<size; i++) {
-        if (arr[i]!=-1) {
-            sum+=arr[i];
-            pixels++;
-        }
-    }
-    return (uint32_t)(sum/pixels);
 }
 
 void color_watershed(uint32_t* labels, uint8_t* image, int width, int height, uint8_t* outimage) {
