@@ -169,11 +169,13 @@ int main(int argc, char** argv) {
 
     queue.finish();
 
+    kernel_automaton.setArg(0, cl_luma_image);
+    kernel_automaton.setArg(1, bmp_width);
+    kernel_automaton.setArg(2, bmp_height);
+    kernel_automaton.setArg(3, bmp_width*bmp_height);
+
+    kernel_compare_lattices.setArg(4, cl_are_diff);
     for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
-        kernel_automaton.setArg(0, cl_luma_image);
-        kernel_automaton.setArg(1, bmp_width);
-        kernel_automaton.setArg(2, bmp_height);
-        kernel_automaton.setArg(3, bmp_width*bmp_height);
         kernel_automaton.setArg(4, cl_t0_lattice);
         kernel_automaton.setArg(5, cl_t0_labels);
         kernel_automaton.setArg(6, cl_t1_lattice);
@@ -191,7 +193,6 @@ int main(int argc, char** argv) {
         kernel_compare_lattices.setArg(1, cl_t1_lattice);
         kernel_compare_lattices.setArg(2, cl_t0_labels);
         kernel_compare_lattices.setArg(3, cl_t1_labels);
-        kernel_compare_lattices.setArg(4, cl_are_diff);
 
         host_init_are_diff[0] = 0;
         queue.enqueueWriteBuffer(cl_are_diff, CL_TRUE, 0, sizeof(cl_uint), host_init_are_diff);
@@ -208,7 +209,6 @@ int main(int argc, char** argv) {
         queue.enqueueReadBuffer(cl_are_diff, CL_TRUE, 0, sizeof(uint32_t), host_init_are_diff);
         queue.finish();
 
-        //std:: cout << "DEBUG: host_init_are_diff[0]=" << host_init_are_diff[0] << std::endl;
         if (!host_init_are_diff[0])  {
             std::cout << TERM_CYAN <<
                 "Baling out early from automaton loop at step #" << i <<
