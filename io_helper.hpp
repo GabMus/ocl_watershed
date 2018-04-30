@@ -24,19 +24,3 @@ void write_ppm(unsigned char* bytes, int size, int width, int height, std::strin
     fwrite( s.c_str(), 1, s.size(), file );
     fclose(file);
 }
-
-void write_rgba_ppm(unsigned char* bytes, int size, int width, int height, std::string path, int colors=255) {
-    std::string s = "P6\n" + std::to_string(width) + " " + std::to_string(height) + "\n" + std::to_string(colors) + "\n";
-
-    for (int i=0; i<size; i++) {
-
-        if (! (i & 3)) { // if i isn't multiple of 4 // equivalent to i % 4
-            std::string bs(reinterpret_cast<char*>(&bytes[i]), sizeof(uint8_t));
-            s.append(bs);
-        }
-
-    }
-    FILE* file = fopen(path.c_str(), "wb");
-    fwrite( s.c_str(), 1, s.size(), file );
-    fclose(file);
-}

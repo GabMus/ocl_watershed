@@ -126,15 +126,19 @@ void kernel color_watershed(
 
     int pos = get_global_id(0) + (get_global_id(1) * width); 
     int index = labels[pos];
+
+    uint4 pixel = read_imageui(
+        original,
+        sampler,
+        (int2){
+            index % width,
+            index / width
+        }
+    );
+
     write_imageui(
         outimage,
         (int2){get_global_id(0), get_global_id(1)},
-        read_imageui(
-            original,
-            (int2){
-                index % width,
-                index / width
-            }
-        )
+        pixel
     );
 }
