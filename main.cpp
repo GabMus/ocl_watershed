@@ -104,18 +104,17 @@ int main(int argc, char** argv) {
                 &err);
     cl_check(err, "Creating output image");
 
-    uint32_t* host_minima_value = new uint32_t();
-    *host_minima_value = 256u;
-
-    cl::Buffer cl_minima_value(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeof(uint32_t), host_minima_value, &err);
-
-    cl_check(err, "Creating minima value buffer");
-
     cl::Buffer cl_t0_lattice(context, CL_MEM_READ_WRITE, sizeof(cl_uint)*bmp_width*bmp_height);
     cl::Buffer cl_t1_lattice(context, CL_MEM_READ_WRITE, sizeof(cl_uint)*bmp_width*bmp_height);
 
     cl::Buffer cl_t0_labels(context, CL_MEM_READ_WRITE, sizeof(cl_uint)*bmp_width*bmp_height);
     cl::Buffer cl_t1_labels(context, CL_MEM_READ_WRITE, sizeof(cl_uint)*bmp_width*bmp_height);
+    
+    uint32_t* host_init_are_diff = new uint32_t();
+    host_init_are_diff[0] = 0u;
+    cl::Buffer cl_are_diff(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeof(cl_uint), host_init_are_diff, &err);
+
+    cl_check(err, "Creating are_diff value buffer");
 
     std::string ocl_source = read_kernel(pwd + "/ocl_source.cl");
     sources.push_back({ocl_source.c_str(), ocl_source.length()});
@@ -132,6 +131,7 @@ int main(int argc, char** argv) {
     cl::Kernel kernel_make_gradient = cl::Kernel(program, "make_gradient");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
     cl::Kernel kernel_automaton = cl::Kernel(program, "automaton");
+    cl::Kernel kernel_compare_lattices = cl::Kernel(program, "compare_lattices");
     cl::Kernel kernel_color_watershed = cl::Kernel(program, "color_watershed");
 
     kernel_make_luma_image.setArg(0, cl_input_image);
@@ -160,7 +160,6 @@ int main(int argc, char** argv) {
     kernel_init_t0.setArg(1, cl_t0_labels);
     kernel_init_t0.setArg(2, bmp_width);
     kernel_init_t0.setArg(3, cl_gradient_image);
-    kernel_init_t0.setArg(4, cl_minima_value);
 
     queue.enqueueNDRangeKernel(
                 kernel_init_t0,
@@ -169,7 +168,6 @@ int main(int argc, char** argv) {
                 cl::NullRange);
 
     queue.finish();
-
 
     for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
         kernel_automaton.setArg(0, cl_luma_image);
@@ -188,6 +186,36 @@ int main(int argc, char** argv) {
                     cl::NullRange);
 
         queue.finish();
+
+        kernel_compare_lattices.setArg(0, cl_t0_lattice);
+        kernel_compare_lattices.setArg(1, cl_t1_lattice);
+        kernel_compare_lattices.setArg(2, cl_t0_labels);
+        kernel_compare_lattices.setArg(3, cl_t1_labels);
+        kernel_compare_lattices.setArg(4, cl_are_diff);
+
+        host_init_are_diff[0] = 0;
+        queue.enqueueWriteBuffer(cl_are_diff, CL_TRUE, 0, sizeof(cl_uint), host_init_are_diff);
+        queue.finish();
+
+        queue.enqueueNDRangeKernel(
+                    kernel_compare_lattices,
+                    cl::NullRange,
+                    cl::NDRange(bmp_width*bmp_height),
+                    cl::NullRange);
+
+        queue.finish();
+
+        queue.enqueueReadBuffer(cl_are_diff, CL_TRUE, 0, sizeof(uint32_t), host_init_are_diff);
+        queue.finish();
+
+        //std:: cout << "DEBUG: host_init_are_diff[0]=" << host_init_are_diff[0] << std::endl;
+        if (!host_init_are_diff[0])  {
+            std::cout << TERM_CYAN <<
+                "Baling out early from automaton loop at step #" << i <<
+                std::endl << TERM_RESET;
+            break;
+        }
+
         std::swap(cl_t0_labels, cl_t1_labels);
         std::swap(cl_t0_lattice, cl_t1_lattice);
     }

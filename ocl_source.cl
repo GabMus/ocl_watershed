@@ -66,8 +66,7 @@ void kernel init_t0(
     global uint* t0_lattice,
     global uint* t0_labels,
     int width,
-    read_only image2d_t gradient_pic,
-    global uint* minima_value) {
+    read_only image2d_t gradient_pic) {
 
     uint pixval = read_imageui(gradient_pic, (int2){get_global_id(0), get_global_id(1)}).x;
     uint pos = get_global_id(0)+(get_global_id(1)*width);
@@ -83,7 +82,7 @@ void kernel automaton(
     global const uint* t0_lattice,
     global const uint* t0_labels,
     global uint* t1_lattice,
-    global uint* t1_labels) { // a same image cannot be rw
+    global uint* t1_labels) {
 
     uint pos = get_global_id(0)+(get_global_id(1)*width);
     // x: north, y: east, z: south, t: west
@@ -115,6 +114,20 @@ void kernel automaton(
     t1_lattice[pos] = u_t.x;
 
     t1_labels[pos] = t0_labels[u_t.y];
+}
+
+void kernel compare_lattices(
+    global const uint* lattice1,
+    global const uint* lattice2,
+    global const uint* labels1,
+    global const uint* labels2,
+    global uint* are_diff) { //are_diff[0] 1 true, 0 false
+
+    atomic_or(&are_diff[0], (
+                lattice1[get_global_id(0)] != lattice2[get_global_id(0)] ||
+                labels1[get_global_id(0)] != labels2[get_global_id(0)]
+        )
+    );
 }
 
 void kernel color_watershed(
