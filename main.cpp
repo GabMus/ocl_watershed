@@ -18,27 +18,40 @@
 #define DEBUG 1
 
 #include "cl_errorcheck.hpp"
+#include "include/cxxopts.hpp"
 #include "imagelib.hpp"
 #include "io_helper.hpp"
 #include "ocl_helper.hpp"
 
-#define BMP_PATH "/home/gabmus/Development/lena.ppm"
-
-int main(int argc, char** argv) {
-
-    std::string bmp_path="";
-
-    if (argc < 2) {
-        std::cout << "Image path not provided, falling back to " << BMP_PATH << std::endl;
-        bmp_path = BMP_PATH;
-    }
-    else {
-        bmp_path = argv[1];
-    }
-
-    cl_int err;
+int main(int argc, const char** argv) {
 
     std::string pwd = get_dir(argv[0]);
+
+    cxxopts::Options options("ocl_watershed", "OpenCL implementation of the watershed transform");
+    options.add_options()
+        ("p,profiling", "Enable profiling")
+        ("i,input", "Input PPM image file path",
+            cxxopts::value<std::string>())
+        ("o,output", "Output file path",
+            cxxopts::value<std::string>()->default_value(pwd + "/out.ppm"));
+
+    auto result = options.parse(argc, argv);
+
+    std::string bmp_path="";
+    std::string out_path="";
+
+    if (result.count("i") == 1) { 
+        bmp_path = result["i"].as<std::string>();
+    }
+    else {
+        std::cout << options.help() << std::endl;
+        exit(1);
+    }
+
+    out_path = result["o"].as<std::string>();
+    bool enable_profiling = result.count("p");
+
+    cl_int err;
 
     BMPVEC bmp;
 
@@ -267,7 +280,7 @@ int main(int argc, char** argv) {
         3*bmp_width*bmp_height,
         bmp_width,
         bmp_height,
-        "/home/gabmus/Development/ocl_watershed_misc/ocl_out.ppm");
+        out_path);
 
     return 0;
 }
