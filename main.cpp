@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -51,6 +52,9 @@ int main(int argc, const char** argv) {
     out_path = result["o"].as<std::string>();
     bool enable_profiling = result.count("p");
 
+    if (enable_profiling) std::cout << TERM_CYAN <<
+        "Running with profiling enabled" << TERM_RESET << std::endl;
+
     cl_int err;
 
     BMPVEC bmp;
@@ -74,7 +78,10 @@ int main(int argc, const char** argv) {
     cl::Device default_device = ocl_get_default_device();
     cl::Context context({default_device});
     cl::Program::Sources sources;
-    cl::CommandQueue queue(context, default_device);
+
+    cl::CommandQueue queue;
+    if (enable_profiling) queue = cl::CommandQueue(context, default_device, CL_QUEUE_PROFILING_ENABLE);
+    else queue = cl::CommandQueue(context, default_device);
 
     cl::Image2D cl_input_image =  cl::Image2D(
                 context,
@@ -194,13 +201,41 @@ int main(int argc, const char** argv) {
         kernel_automaton.setArg(6, cl_t1_lattice);
         kernel_automaton.setArg(7, cl_t1_labels);
 
-        queue.enqueueNDRangeKernel(
-                    kernel_automaton,
-                    cl::NullRange,
-                    cl::NDRange(bmp_width, bmp_height),
-                    cl::NullRange);
+        // Insert profiling here
+        if (enable_profiling) {
+            cl::Event automaton_event;
+            queue.enqueueNDRangeKernel(
+                        kernel_automaton,
+                        cl::NullRange,
+                        cl::NDRange(bmp_width, bmp_height),
+                        cl::NullRange,
+                        NULL, //This is `const VECTOR_CLASS<Event>* events` and defaults to NULL anyway
+                        &automaton_event);
+            automaton_event.wait();
+            queue.finish();
 
-        queue.finish();
+            // Let's get some stats
+            
+            cl_ulong time_start = automaton_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+            cl_ulong time_end = automaton_event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+            //std::cout << "\tDEBUG: "<< time_start << std::endl << "\t       " << time_end << std::endl;
+
+            double nanoseconds = time_end-time_start;
+
+            std::cout << TERM_CYAN <<
+                "Step " << i << ": " <<
+                std::setprecision(5) <<
+                nanoseconds/1000000.0 << "ms" <<
+                TERM_RESET << std::endl;
+        }
+        else {
+            queue.enqueueNDRangeKernel(
+                        kernel_automaton,
+                        cl::NullRange,
+                        cl::NDRange(bmp_width, bmp_height),
+                        cl::NullRange);
+            queue.finish();
+        }
 
         kernel_compare_lattices.setArg(0, cl_t0_lattice);
         kernel_compare_lattices.setArg(1, cl_t1_lattice);
