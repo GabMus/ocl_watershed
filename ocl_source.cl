@@ -78,11 +78,11 @@ void kernel automaton(
     read_only image2d_t luma_pic, // this contains the values for f(p)
     int width,
     int height,
-    int size,
     global const uint* t0_lattice,
     global const uint* t0_labels,
     global uint* t1_lattice,
-    global uint* t1_labels) {
+    global uint* t1_labels,
+    global uint* are_diff) {
 
     uint pos = get_global_id(0)+(get_global_id(1)*width);
     // x: north, y: east, z: south, t: west
@@ -114,20 +114,13 @@ void kernel automaton(
     t1_lattice[pos] = u_t.x;
 
     t1_labels[pos] = t0_labels[u_t.y];
-}
-
-void kernel compare_lattices(
-    global const uint* lattice1,
-    global const uint* lattice2,
-    global const uint* labels1,
-    global const uint* labels2,
-    global uint* are_diff) { //are_diff[0] 1 true, 0 false
 
     atomic_or(&are_diff[0], (
-                lattice1[get_global_id(0)] != lattice2[get_global_id(0)] ||
-                labels1[get_global_id(0)] != labels2[get_global_id(0)]
+                t0_lattice[pos] != t1_lattice[pos] ||
+                t0_labels[pos] != t1_labels[pos]
         )
     );
+
 }
 
 void kernel color_watershed(
