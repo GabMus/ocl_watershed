@@ -120,7 +120,6 @@ void kernel automaton(
                 t0_labels[pos] != t1_labels[pos]
         )
     );
-
 }
 
 void kernel color_watershed(

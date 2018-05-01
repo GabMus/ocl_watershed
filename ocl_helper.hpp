@@ -60,7 +60,7 @@ cl::Device ocl_get_default_device() {
     return default_device;
 }
 
-void profile_kernel(
+double profile_kernel(
         cl::CommandQueue &queue,
         cl::Kernel &kernel,
         cl::NDRange offset,
@@ -84,11 +84,13 @@ void profile_kernel(
     //std::cout << "\tDEBUG: "<< time_start << std::endl << "\t       " << time_end << std::endl;
 
     double nanoseconds = time_end-time_start;
+    double milliseconds = nanoseconds/1000000.0;
 
     std::cout << TERM_CYAN <<
             message <<
             std::setprecision(5) <<
-            nanoseconds/1000000.0 << "ms" <<
+            milliseconds << "ms" <<
             TERM_RESET << std::endl;
 
+    return milliseconds;
 }

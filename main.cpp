@@ -192,6 +192,8 @@ int main(int argc, const char** argv) {
     kernel_automaton.setArg(2, bmp_height);
     kernel_automaton.setArg(7, cl_are_diff);
 
+    double total_time = 0;
+
     for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
         kernel_automaton.setArg(3, cl_t0_lattice);
         kernel_automaton.setArg(4, cl_t0_labels);
@@ -202,10 +204,9 @@ int main(int argc, const char** argv) {
         queue.enqueueWriteBuffer(cl_are_diff, CL_TRUE, 0, sizeof(cl_uint), host_init_are_diff);
         queue.finish();
 
-
         // Insert profiling here
         if (enable_profiling) {
-            profile_kernel(
+            total_time += profile_kernel(
                         queue,
                         kernel_automaton,
                         cl::NullRange,
@@ -235,6 +236,11 @@ int main(int argc, const char** argv) {
         std::swap(cl_t0_labels, cl_t1_labels);
         std::swap(cl_t0_lattice, cl_t1_lattice);
     }
+
+    if (enable_profiling) std::cout << TERM_GREEN << "Total automaton time: " <<
+            std::setprecision(5) <<
+            total_time << "ms" <<
+            TERM_RESET << std::endl;
 
     queue.finish();
 
