@@ -203,30 +203,13 @@ int main(int argc, const char** argv) {
 
         // Insert profiling here
         if (enable_profiling) {
-            cl::Event automaton_event;
-            queue.enqueueNDRangeKernel(
+            profile_kernel(
+                        queue,
                         kernel_automaton,
                         cl::NullRange,
                         cl::NDRange(bmp_width, bmp_height),
                         cl::NullRange,
-                        NULL, //This is `const VECTOR_CLASS<Event>* events` and defaults to NULL anyway
-                        &automaton_event);
-            automaton_event.wait();
-            queue.finish();
-
-            // Let's get some stats
-            
-            cl_ulong time_start = automaton_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-            cl_ulong time_end = automaton_event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
-            //std::cout << "\tDEBUG: "<< time_start << std::endl << "\t       " << time_end << std::endl;
-
-            double nanoseconds = time_end-time_start;
-
-            std::cout << TERM_CYAN <<
-                "Step " << i << ": " <<
-                std::setprecision(5) <<
-                nanoseconds/1000000.0 << "ms" <<
-                TERM_RESET << std::endl;
+                        "Step " + std::to_string(i) + ": ");
         }
         else {
             queue.enqueueNDRangeKernel(

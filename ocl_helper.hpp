@@ -59,3 +59,36 @@ cl::Device ocl_get_default_device() {
                 std::endl;
     return default_device;
 }
+
+void profile_kernel(
+        cl::CommandQueue &queue,
+        cl::Kernel &kernel,
+        cl::NDRange offset,
+        cl::NDRange global,
+        cl::NDRange local,
+        std::string message="") {
+    
+    cl::Event event;
+    queue.enqueueNDRangeKernel(
+                kernel,
+                offset,
+                global,
+                local,
+                NULL, //This is `const VECTOR_CLASS<Event>* events` and defaults to NULL anyway
+                &event);
+    event.wait();
+    queue.finish();
+    
+    cl_ulong time_start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+    cl_ulong time_end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+    //std::cout << "\tDEBUG: "<< time_start << std::endl << "\t       " << time_end << std::endl;
+
+    double nanoseconds = time_end-time_start;
+
+    std::cout << TERM_CYAN <<
+            message <<
+            std::setprecision(5) <<
+            nanoseconds/1000000.0 << "ms" <<
+            TERM_RESET << std::endl;
+
+}
