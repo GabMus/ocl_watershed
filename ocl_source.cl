@@ -6,7 +6,7 @@ constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_
 #define G_LUMA_MULT 0.7152f
 #define B_LUMA_MULT 0.0722f
 #define MAX_INT UINT_MAX
-#define LAPLACIAN 1
+#define LAPLACIAN 0
 
 //void kernel init_globals(global uint* minima_value) {
 //    *minima_value=255u;

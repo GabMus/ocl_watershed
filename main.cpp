@@ -161,7 +161,7 @@ int main(int argc, const char** argv) {
             cl::NDRange(bmp_width, bmp_height),
             cl::NullRange);
 
-    queue.finish();
+    //queue.finish();
 
     kernel_make_gradient.setArg(0, cl_luma_image);
     kernel_make_gradient.setArg(1, cl_gradient_image);
@@ -172,7 +172,7 @@ int main(int argc, const char** argv) {
             cl::NDRange(bmp_width, bmp_height),
             cl::NullRange);
 
-    queue.finish();
+    //queue.finish();
 
     kernel_init_t0.setArg(0, cl_t0_lattice);
     kernel_init_t0.setArg(1, cl_t0_labels);
