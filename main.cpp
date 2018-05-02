@@ -193,6 +193,7 @@ int main(int argc, const char** argv) {
     kernel_automaton.setArg(7, cl_are_diff);
 
     double total_time = 0;
+    int automaton_iterations = 0;
 
     for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
         kernel_automaton.setArg(3, cl_t0_lattice);
@@ -213,6 +214,7 @@ int main(int argc, const char** argv) {
                         cl::NDRange(bmp_width, bmp_height),
                         cl::NullRange,
                         "Step " + std::to_string(i) + ": ");
+            automaton_iterations++;
         }
         else {
             queue.enqueueNDRangeKernel(
@@ -239,7 +241,9 @@ int main(int argc, const char** argv) {
 
     if (enable_profiling) std::cout << TERM_GREEN << "Total automaton time: " <<
             std::setprecision(5) <<
-            total_time << "ms" <<
+            total_time << "ms" << std::endl <<
+            "Mean automaton time: " << 
+            total_time/(double)automaton_iterations << "ms"
             TERM_RESET << std::endl;
 
     queue.finish();
