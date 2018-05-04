@@ -115,11 +115,11 @@ void kernel automaton(
 
     t1_labels[pos] = t0_labels[u_t.y];
 
-    atomic_or(&are_diff[0], (
-                t0_lattice[pos] != t1_lattice[pos] ||
-                t0_labels[pos] != t1_labels[pos]
-        )
+    bool local_arediff = (
+        t0_lattice[pos] != t1_lattice[pos] ||
+        t0_labels[pos] != t1_labels[pos]
     );
+    if (local_arediff) are_diff[0] = 1;
 }
 
 void kernel color_watershed(
