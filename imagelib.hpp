@@ -13,9 +13,7 @@ typedef struct tagBMPSIZE {
     int h;
 } *PBMPSIZE, BMPSIZE;
 
-#ifndef std::string
 #include <string>
-#endif
 
 void read_ppm(std::string path, BMPVEC& buffer, int& width, int& height) {
     std::ifstream file(path, std::ios::binary);

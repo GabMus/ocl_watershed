@@ -1,12 +1,7 @@
 #pragma once
 
-#ifndef cl
 #include <CL/cl.hpp>
-#endif
-
-#ifndef std::string
 #include <string>
-#endif
 
 std::string read_kernel(std::string kernel_path) {
     // Read the kernel file and return it as string;
