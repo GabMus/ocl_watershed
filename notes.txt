@@ -1,0 +1,11 @@
+vedo quello che il driver chiama preferred_group_size_multiple
+è una kernel property, non dipende dall'hardware ma dal kernel
+local worksize deve essere multiplo di questo preferred_cazzo quello che è
+global ws deve essere multiplo di lws
+
+
+dare un default 16x16
+
+passare puntatore local (local int* lmem)
+
+setkernelarg come valore ha null per il puntatore alla local meomory (in setArg gli devo passare la dimensione giusta in byte)
