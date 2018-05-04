@@ -1,6 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
-constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;
+constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_REPEAT | CLK_FILTER_LINEAR;
 
 #define R_LUMA_MULT 0.2126f
 #define G_LUMA_MULT 0.7152f
@@ -82,11 +82,13 @@ void kernel automaton(
     global const uint* t0_labels,
     global uint* t1_lattice,
     global uint* t1_labels,
-    global uint* are_diff) {
+    global uint* are_diff,
+    local uint* cache) {
 
     uint pos = get_global_id(0)+(get_global_id(1)*width);
-    // x: north, y: east, z: south, t: west
+    if (pos > width*height) return;
 
+    // x: north, y: east, z: south, w: west
     uint4 neib_pos = (uint4){
         get_global_id(1) != 0 ? pos-width : pos, // exists if it's not the first row
         get_global_id(0) != (width-1) ? pos+1 : pos, // exists if it's not the last column

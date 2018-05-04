@@ -34,7 +34,12 @@ int main(int argc, const char** argv) {
         ("i,input", "Input PPM image file path",
             cxxopts::value<std::string>())
         ("o,output", "Output file path",
-            cxxopts::value<std::string>()->default_value(pwd + "/out.ppm"));
+            cxxopts::value<std::string>()->default_value(pwd + "/out.ppm"))
+        ("l,localworksize", "Local work size",
+            cxxopts::value<int>()->default_value("0"))
+        ("v,vector", "Kernel vectorization (valid values are 1, 4 or 16)",
+            cxxopts::value<int>()->default_value("1"));
+
 
     auto result = options.parse(argc, argv);
 
@@ -47,6 +52,16 @@ int main(int argc, const char** argv) {
     else {
         std::cout << options.help() << std::endl;
         exit(1);
+    }
+
+    int lws_cli = result["l"].as<int>();
+    int vectorization = result["v"].as<int>();
+
+    if (vectorization != 1 && vectorization != 4 && vectorization != 16) {
+        std::cout << TERM_RED <<
+            "WARNING: provided kernel vectorization is invalid (valid values are 1, 4 or 16)\n         Falling back to 1" << 
+            TERM_RESET << std::endl;
+        vectorization = 1;
     }
 
     out_path = result["o"].as<std::string>();
@@ -187,10 +202,29 @@ int main(int argc, const char** argv) {
 
     queue.finish();
 
+    // Preferred Group Size Multiple
+    cl_int pref_gs_mult = kernel_automaton.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+            default_device,
+            &err);
+    cl_check(err, "Getting preferred group size multiple");
+
+    cl_int lws = lws_cli ? lws_cli : pref_gs_mult;
+
+    cl_int gws_width = round_gws((bmp_width)/vectorization, lws);
+    cl_int gws_height = round_gws((bmp_height)/vectorization, lws);
+    
+#if DEBUG
+    std::cout << "Preferred Group Size Multiple: " <<
+        pref_gs_mult << std::endl;
+    std::cout << "bmp size: " << bmp_width << "x" << bmp_height << std::endl <<
+        "gws: " << gws_width << "x" << gws_height << std::endl;
+#endif
+
     kernel_automaton.setArg(0, cl_luma_image);
     kernel_automaton.setArg(1, bmp_width);
     kernel_automaton.setArg(2, bmp_height);
     kernel_automaton.setArg(7, cl_are_diff);
+    kernel_automaton.setArg(8, cl::Local(sizeof(cl_uint)*lws*lws));
 
     double total_time = 0;
     int automaton_iterations = 0;
@@ -211,18 +245,20 @@ int main(int argc, const char** argv) {
                         queue,
                         kernel_automaton,
                         cl::NullRange,
-                        cl::NDRange(bmp_width, bmp_height),
-                        cl::NullRange,
+                        cl::NDRange(gws_width, gws_height),
+                        cl::NDRange(lws, lws),
                         "Step " + std::to_string(i) + ": ");
             automaton_iterations++;
         }
         else {
-            queue.enqueueNDRangeKernel(
+            err = queue.enqueueNDRangeKernel(
                         kernel_automaton,
                         cl::NullRange,
-                        cl::NDRange(bmp_width, bmp_height),
-                        cl::NullRange);
+                        cl::NDRange(gws_width, gws_height),
+                        cl::NDRange(lws, lws));
             queue.finish();
+            std::cout << "DEBUG: " << err << std::endl;
+            cl_check(err, "Running automaton kernel (step #"+std::to_string(i)+")");
         }
 
         queue.enqueueReadBuffer(cl_are_diff, CL_TRUE, 0, sizeof(uint32_t), host_init_are_diff);

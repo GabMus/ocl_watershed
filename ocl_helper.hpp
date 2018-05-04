@@ -64,7 +64,7 @@ double profile_kernel(
         std::string message="") {
     
     cl::Event event;
-    queue.enqueueNDRangeKernel(
+    int err = queue.enqueueNDRangeKernel(
                 kernel,
                 offset,
                 global,
@@ -73,6 +73,7 @@ double profile_kernel(
                 &event);
     event.wait();
     queue.finish();
+    cl_check(err, "Running automaton kernel ("+message+"\b\b)");
     
     cl_ulong time_start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
     cl_ulong time_end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
@@ -88,4 +89,8 @@ double profile_kernel(
             TERM_RESET << std::endl;
 
     return milliseconds;
+}
+
+cl_int round_gws(cl_int gws, cl_int lws) {
+    return ((gws + lws - 1) / lws) * lws;
 }
