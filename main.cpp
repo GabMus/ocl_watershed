@@ -224,7 +224,20 @@ int main(int argc, const char** argv) {
     kernel_automaton.setArg(1, bmp_width);
     kernel_automaton.setArg(2, bmp_height);
     kernel_automaton.setArg(7, cl_are_diff);
-    kernel_automaton.setArg(8, cl::Local(sizeof(cl_uint)*lws*lws));
+    kernel_automaton.setArg(8, cl::Local(
+                sizeof(cl_uint) * ( (lws+2) * (lws+2) )
+    ));
+    kernel_automaton.setArg(9, cl::Local(
+                sizeof(cl_uint) * ( (lws+2) * (lws+2) )
+    ));
+
+    /*  Graphical explanation of the cache size
+        /xxx/       0s are the core of the cache
+        x000x       xs are the workgroup neighbors
+        x000x       /s are unused memory areas that are necessary for 2d cache mapping
+        x000x
+        /xxx/
+     */
 
     double total_time = 0;
     int automaton_iterations = 0;

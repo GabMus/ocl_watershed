@@ -83,7 +83,8 @@ void kernel automaton(
     global uint* t1_lattice,
     global uint* t1_labels,
     global uint* are_diff,
-    local uint* cache) {
+    local uint* cache_lattice,
+    local uint* cache_labels) {
 
     uint pos = get_global_id(0)+(get_global_id(1)*width);
     if (pos > width*height) return;
@@ -93,33 +94,82 @@ void kernel automaton(
         get_global_id(1) != 0 ? pos-width : pos, // exists if it's not the first row
         get_global_id(0) != (width-1) ? pos+1 : pos, // exists if it's not the last column
         get_global_id(1) != (height-1) ? pos+width : pos, // exists if it's not the last row
-        get_global_id(0) != 0 ? pos-1 : pos, //exists if it's not the first column
+        get_global_id(0) != 0 ? pos-1 : pos //exists if it's not the first column
     };
+
+    // all core indexes are x and y all +1. the formula below linearizes this concept
+    
+    uint local_pos = get_local_id(0) +1 + (get_local_id(1) * (get_local_size(0)+2));
+    
+    uint4 local_neib_pos = (uint4){
+        local_pos-get_local_size(0)-2,
+        local_pos+1,
+        local_pos+get_local_size(0)+2,
+        local_pos-1
+    };
+
+
+    // write core pixel in cache
+    cache_lattice[local_pos] = t0_lattice[pos];
+    cache_labels[local_pos] = t0_labels[pos];
+
+    // Explicit "I am in _ border" declarations as reference. Will do as char4
+    // bool i_am_in_north_border = get_local_id(1) == 0;
+    // bool i_am_in_east_border = get_local_id(0) == get_local_size(0)-1;
+    // bool i_am_in_south_border = get_local_id(1) == get_local_size(0)-1;
+    // bool i_am_in_west_border = get_local_id(0) == 0;
+
+    char4 local_border_status = (char4){
+        get_local_id(1) == 0,                   // North
+        get_local_id(0) == get_local_size(0)-1, // East
+        get_local_id(1) == get_local_size(0)-1, // South
+        get_local_id(0) == 0                    // West
+    };
+
+    if (local_border_status.x) {
+        cache_lattice[local_neib_pos.x] = t0_lattice[neib_pos.x];
+        cache_labels[local_neib_pos.x] = t0_labels[neib_pos.x];
+    }
+    if (local_border_status.y) {
+        cache_lattice[local_neib_pos.y] = t0_lattice[neib_pos.y];
+        cache_labels[local_neib_pos.y] = t0_labels[neib_pos.y];
+    }
+    if (local_border_status.z) {
+        cache_lattice[local_neib_pos.z] = t0_lattice[neib_pos.z];
+        cache_labels[local_neib_pos.z] = t0_labels[neib_pos.z];
+    }
+    if (local_border_status.w) {
+        cache_lattice[local_neib_pos.w] = t0_lattice[neib_pos.w];
+        cache_labels[local_neib_pos.w] = t0_labels[neib_pos.w];
+    }
+
+    barrier(CLK_LOCAL_MEM_FENCE); // wait for all work items to finish caching
 
     uint pixel = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
 
     uint2 u_t=(uint2){
-       t0_lattice[pos],
+       cache_lattice[local_pos],
        pos
     };
 
-    uint u_tx = add_sat(t0_lattice[neib_pos.x], (pixel*(pos!=neib_pos.x)));
-    uint u_ty = add_sat(t0_lattice[neib_pos.y], (pixel*(pos!=neib_pos.y)));
-    uint u_tz = add_sat(t0_lattice[neib_pos.z], (pixel*(pos!=neib_pos.z)));
-    uint u_tw = add_sat(t0_lattice[neib_pos.w], (pixel*(pos!=neib_pos.w)));
+    uint u_tx = add_sat(cache_lattice[local_neib_pos.x], (pixel*(pos!=neib_pos.x)));
+    uint u_ty = add_sat(cache_lattice[local_neib_pos.y], (pixel*(pos!=neib_pos.y)));
+    uint u_tz = add_sat(cache_lattice[local_neib_pos.z], (pixel*(pos!=neib_pos.z)));
+    uint u_tw = add_sat(cache_lattice[local_neib_pos.w], (pixel*(pos!=neib_pos.w)));
 
-    u_t = u_t.x > u_tx ? (uint2){u_tx, neib_pos.x} : u_t;
-    u_t = u_t.x > u_ty ? (uint2){u_ty, neib_pos.y} : u_t;
-    u_t = u_t.x > u_tz ? (uint2){u_tz, neib_pos.z} : u_t;
-    u_t = u_t.x > u_tw ? (uint2){u_tw, neib_pos.w} : u_t;
+    u_t = u_t.x > u_tx ? (uint2){u_tx, local_neib_pos.x} : u_t;
+    u_t = u_t.x > u_ty ? (uint2){u_ty, local_neib_pos.y} : u_t;
+    u_t = u_t.x > u_tz ? (uint2){u_tz, local_neib_pos.z} : u_t;
+    u_t = u_t.x > u_tw ? (uint2){u_tw, local_neib_pos.w} : u_t;
 
     t1_lattice[pos] = u_t.x;
+    uint newlabel = cache_labels[u_t.y];
 
-    t1_labels[pos] = t0_labels[u_t.y];
+    t1_labels[pos] = newlabel;
 
     if (
-        t0_lattice[pos] != t1_lattice[pos] ||
-        t0_labels[pos] != t1_labels[pos]
+        cache_lattice[local_pos] != u_t.x || // equivalent to t1_lattice[pos] ||
+        cache_labels[local_pos] != newlabel // equivalent to t1_labels[pos]
     ) are_diff[0] = 1;
 }
 
