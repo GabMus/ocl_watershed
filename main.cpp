@@ -161,6 +161,12 @@ int main(int argc, const char** argv) {
         exit(1);
     }
 
+#if DEBUG
+    std::cout << "Program build log:\n" <<
+        program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) <<
+        std::endl << std::endl;
+#endif
+
     cl::Kernel kernel_make_luma_image = cl::Kernel(program, "make_luma_image");
     cl::Kernel kernel_make_gradient = cl::Kernel(program, "make_gradient");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
@@ -270,7 +276,6 @@ int main(int argc, const char** argv) {
                         cl::NDRange(gws_width, gws_height),
                         cl::NDRange(lws, lws));
             queue.finish();
-            std::cout << "DEBUG: " << err << std::endl;
             cl_check(err, "Running automaton kernel (step #"+std::to_string(i)+")");
         }
 
@@ -303,11 +308,13 @@ int main(int argc, const char** argv) {
     kernel_color_watershed.setArg(3, cl_t1_labels);
     kernel_color_watershed.setArg(4, cl_output_image);
 
-    queue.enqueueNDRangeKernel(
+    err = queue.enqueueNDRangeKernel(
                     kernel_color_watershed,
                     cl::NullRange,
                     cl::NDRange(bmp_width, bmp_height),
                     cl::NullRange);
+
+    cl_check(err, "Coloring watershed");
 
     queue.finish();
 
