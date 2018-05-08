@@ -87,7 +87,20 @@ void kernel automaton(
     local uint* cache_labels) {
 
     uint pos = get_global_id(0)+(get_global_id(1)*width);
-    if (pos > width*height) return;
+    uint img_size = width*height;
+    //if (pos > width*height) return;
+
+    const size_t local_id0 = get_local_id(0);
+    const size_t local_id1 = get_local_id(1);
+
+    printf(
+        "***************\nget_local_size(0): %u\nget_local_size(1): %u\n***************\n",
+        get_local_size(0), get_local_size(1)
+    );
+
+    //printf("***************\nget_local_id(0) = %u\nget_local_id(1) = %u\n***************\n", get_local_id(0), get_local_id(1));
+
+    //if (local_id1 >3) printf("yes: %u\n", local_id1);
 
     // x: north, y: east, z: south, w: west
     uint4 neib_pos = (uint4){
@@ -99,7 +112,7 @@ void kernel automaton(
 
     // all core indexes are x and y all +1. the formula below linearizes this concept
     
-    uint local_pos = get_local_id(0) +1 + (get_local_id(1) * (get_local_size(0)+2));
+    uint local_pos = local_id0 +1 + (local_id1 * (get_local_size(0)+2));
     
     uint4 local_neib_pos = (uint4){
         local_pos-get_local_size(0)-2,
@@ -108,10 +121,25 @@ void kernel automaton(
         local_pos-1
     };
 
+    // TODO: REMOVE THE FOLLOWING, IT'S FOR DEBUG PURPOSES
+    //printf("workdim: %u\n", get_work_dim());
+    if (local_neib_pos.x >= (get_local_size(0)+2) * (get_local_size(0)+2)) {
+        /*printf(
+            "\n\n\nx local neighbor out of bound\n>>> local pos: %u\n<<< local ids:\n\t0: %u\n\t1: %u\n",
+            local_pos,
+            local_id0,
+            local_id1);*/
+    }
+    if (local_neib_pos.y >= (get_local_size(0)+2) * (get_local_size(0)+2)) printf("y local neighbor out of bound\n");
+    if (local_neib_pos.z >= (get_local_size(0)+2) * (get_local_size(0)+2)) printf("z local neighbor out of bound\n");
+    if (local_neib_pos.w >= (get_local_size(0)+2) * (get_local_size(0)+2)) printf("w local neighbor out of bound\n");
+    //printf("%d\n", get_local_size(0));
 
     // write core pixel in cache
-    cache_lattice[local_pos] = t0_lattice[pos];
-    cache_labels[local_pos] = t0_labels[pos];
+    if (pos < img_size) {
+        cache_lattice[local_pos] = t0_lattice[pos];
+        cache_labels[local_pos] = t0_labels[pos];
+    }
 
     // Explicit "I am in _ border" declarations as reference. Will do as char4
     // bool i_am_in_north_border = get_local_id(1) == 0;
@@ -126,24 +154,26 @@ void kernel automaton(
         get_local_id(0) == 0                    // West
     };
 
-    if (local_border_status.x) {
+    if (local_border_status.x && neib_pos.x < img_size) {
         cache_lattice[local_neib_pos.x] = t0_lattice[neib_pos.x];
         cache_labels[local_neib_pos.x] = t0_labels[neib_pos.x];
     }
-    if (local_border_status.y) {
+    if (local_border_status.y && neib_pos.y < img_size) {
         cache_lattice[local_neib_pos.y] = t0_lattice[neib_pos.y];
         cache_labels[local_neib_pos.y] = t0_labels[neib_pos.y];
     }
-    if (local_border_status.z) {
+    if (local_border_status.z && neib_pos.z < img_size) {
         cache_lattice[local_neib_pos.z] = t0_lattice[neib_pos.z];
         cache_labels[local_neib_pos.z] = t0_labels[neib_pos.z];
     }
-    if (local_border_status.w) {
+    if (local_border_status.w && neib_pos.w < img_size) {
         cache_lattice[local_neib_pos.w] = t0_lattice[neib_pos.w];
         cache_labels[local_neib_pos.w] = t0_labels[neib_pos.w];
     }
 
     barrier(CLK_LOCAL_MEM_FENCE); // wait for all work items to finish caching
+
+    if (pos >= img_size) return;
 
     uint pixel = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
 

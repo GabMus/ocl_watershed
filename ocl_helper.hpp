@@ -15,7 +15,7 @@ std::string read_kernel(std::string kernel_path) {
     return sourceCode;
 }
 
-cl::Device ocl_get_default_device() {
+cl::Device ocl_get_default_device(bool selectplatform=false) {
     // get all platforms
     std::vector<cl::Platform> all_platforms;
     cl::Platform::get(&all_platforms);
@@ -31,7 +31,22 @@ cl::Device ocl_get_default_device() {
         std::cout << "#" << i << ": " << all_platforms[i].getInfo<CL_PLATFORM_NAME>() << std::endl;
     }
 
-    cl::Platform default_platform = all_platforms[0];
+    int platformid = -1;
+    if (selectplatform) {
+        int tmp_platformid=0;
+        while (platformid == -1) {
+            std::cout << "Select platform id >>> ";
+            std::cin >> tmp_platformid;
+            if (tmp_platformid >=0 && tmp_platformid < howmany_platforms) {
+                platformid = tmp_platformid;
+            }
+            else {
+                std::cerr << "Error: selected platform invalid. Please try again\n";
+            }
+        }
+    }
+
+    cl::Platform default_platform = all_platforms[platformid];
     std::cout << "Using default platform " <<
                  TERM_BOLD <<
                  default_platform.getInfo<CL_PLATFORM_NAME>() <<

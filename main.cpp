@@ -38,7 +38,9 @@ int main(int argc, const char** argv) {
         ("l,localworksize", "Local work size",
             cxxopts::value<int>()->default_value("0"))
         ("v,vector", "Kernel vectorization (valid values are 1, 4 or 16)",
-            cxxopts::value<int>()->default_value("1"));
+            cxxopts::value<int>()->default_value("1"))
+        ("P,selectplatform", "Manually select platform in runtime");
+
 
 
     auto result = options.parse(argc, argv);
@@ -66,6 +68,7 @@ int main(int argc, const char** argv) {
 
     out_path = result["o"].as<std::string>();
     bool enable_profiling = result.count("p");
+    bool selectplatform = result.count("P");
 
     if (enable_profiling) std::cout << TERM_CYAN <<
         "Running with profiling enabled" << TERM_RESET << std::endl;
@@ -90,7 +93,7 @@ int main(int argc, const char** argv) {
     BMPVEC bmp_RGBA_data;
     bgr2bgra(bmp, bmp_RGBA_data);
 
-    cl::Device default_device = ocl_get_default_device();
+    cl::Device default_device = ocl_get_default_device(selectplatform);
     cl::Context context({default_device});
     cl::Program::Sources sources;
 
