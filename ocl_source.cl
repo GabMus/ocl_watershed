@@ -86,17 +86,16 @@ void kernel automaton(
     local uint* cache_lattice,
     local uint* cache_labels) {
 
-    uint pos = get_global_id(0)+(get_global_id(1)*width);
-    uint img_size = width*height;
-    //if (pos > width*height) return;
-
+    const uint pos = get_global_id(0)+(get_global_id(1)*width);
+    const uint img_size = width*height;
     const size_t local_id0 = get_local_id(0);
     const size_t local_id1 = get_local_id(1);
     const size_t lws0 = get_local_size(0);
     const size_t lws1 = get_local_size(1);
     const size_t cache_height = lws1+2;
     const int iamoutofbound = get_global_id(0) >= width || get_global_id(1) >= height;
-    if (iamoutofbound) return;
+
+    if (iamoutofbound) return; // failsafe (the global work sizes can be bigger than the image sizes)
 
     // x: north, y: east, z: south, w: west
     uint4 neib_pos = (uint4){
@@ -133,17 +132,6 @@ void kernel automaton(
         get_local_id(0) == get_local_size(0)-1, // East 
         get_local_id(1) == get_local_size(0)-1, // South 
         get_local_id(0) == 0                    // West 
-    };*/
-
-    //local_border_status = local_border_status && (neib_pos != (uint4)pos);
-
-    //printf("N:%d E:%d S:%d W:%d\n", local_border_status.x, local_border_status.y, local_border_status.z, local_border_status.w);
-
-    /*uint4 local_neib_pos = (uint4){
-        local_border_status.x ? local_pos-cache_height : local_pos,
-        local_border_status.y ? local_pos+1 : local_pos,
-        local_border_status.z ? local_pos+cache_height : local_pos,
-        local_border_status.w ? local_pos-1 : local_pos
     };*/
 
     uint4 local_neib_pos = (uint4){
@@ -184,15 +172,25 @@ void kernel automaton(
        local_pos
     };
 
+    // possible u_t candidates
+    uint4 ut_cand = (uint4){
+        add_sat(cache_lattice[local_neib_pos.x], pixel),
+        add_sat(cache_lattice[local_neib_pos.y], pixel),
+        add_sat(cache_lattice[local_neib_pos.z], pixel),
+        add_sat(cache_lattice[local_neib_pos.w], pixel),
+    };
+
+    ut_cand = select(ut_cand, (uint4)MAX_INT, ((uint4)pos == neib_pos));
+    /* the above is a more efficient version of the following
     uint u_tx = pos == neib_pos.x ? MAX_INT : add_sat(cache_lattice[local_neib_pos.x], pixel);
     uint u_ty = pos == neib_pos.y ? MAX_INT : add_sat(cache_lattice[local_neib_pos.y], pixel);
     uint u_tz = pos == neib_pos.z ? MAX_INT : add_sat(cache_lattice[local_neib_pos.z], pixel);
-    uint u_tw = pos == neib_pos.w ? MAX_INT : add_sat(cache_lattice[local_neib_pos.w], pixel);
+    uint u_tw = pos == neib_pos.w ? MAX_INT : add_sat(cache_lattice[local_neib_pos.w], pixel);*/
 
-    u_t = u_t.x > u_tx ? (uint2){u_tx, local_neib_pos.x} : u_t;
-    u_t = u_t.x > u_ty ? (uint2){u_ty, local_neib_pos.y} : u_t;
-    u_t = u_t.x > u_tz ? (uint2){u_tz, local_neib_pos.z} : u_t;
-    u_t = u_t.x > u_tw ? (uint2){u_tw, local_neib_pos.w} : u_t;
+    u_t = u_t.x > ut_cand.x ? (uint2){ut_cand.x, local_neib_pos.x} : u_t;
+    u_t = u_t.x > ut_cand.y ? (uint2){ut_cand.y, local_neib_pos.y} : u_t;
+    u_t = u_t.x > ut_cand.z ? (uint2){ut_cand.z, local_neib_pos.z} : u_t;
+    u_t = u_t.x > ut_cand.w ? (uint2){ut_cand.w, local_neib_pos.w} : u_t;
 
     t1_lattice[pos] = u_t.x;
     uint newlabel = cache_labels[u_t.y];

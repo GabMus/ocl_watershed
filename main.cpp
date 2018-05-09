@@ -37,8 +37,8 @@ int main(int argc, const char** argv) {
             cxxopts::value<std::string>()->default_value(pwd + "/out.ppm"))
         ("l,localworksize", "Local work size",
             cxxopts::value<int>()->default_value("0"))
-        ("v,vector", "Kernel vectorization (valid values are 1, 4 or 16)",
-            cxxopts::value<int>()->default_value("1"))
+        /*("v,vector", "Kernel vectorization (valid values are 1, 4 or 16)",
+            cxxopts::value<int>()->default_value("1"))*/
         ("P,selectplatform", "Manually select platform in runtime",
             cxxopts::value<int>()->default_value("0"));
 
@@ -58,14 +58,14 @@ int main(int argc, const char** argv) {
     }
 
     int lws_cli = result["l"].as<int>();
-    int vectorization = result["v"].as<int>();
+    /*int vectorization = result["v"].as<int>();
 
     if (vectorization != 1 && vectorization != 4 && vectorization != 16) {
         std::cout << TERM_RED <<
             "WARNING: provided kernel vectorization is invalid (valid values are 1, 4 or 16)\n         Falling back to 1" << 
             TERM_RESET << std::endl;
         vectorization = 1;
-    }
+    }*/
 
     out_path = result["o"].as<std::string>();
     bool enable_profiling = result.count("p");
@@ -220,8 +220,8 @@ int main(int argc, const char** argv) {
 
     cl_int lws = lws_cli ? lws_cli : pref_gs_mult;
 
-    cl_int gws_width = round_gws((bmp_width)/vectorization, lws);
-    cl_int gws_height = round_gws((bmp_height)/vectorization, lws);
+    cl_int gws_width = round_up(bmp_width, lws);
+    cl_int gws_height = round_up(bmp_height, lws);
     
 #if DEBUG
     std::cout << "Preferred Group Size Multiple: " <<

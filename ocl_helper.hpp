@@ -99,6 +99,6 @@ double profile_kernel(
     return milliseconds;
 }
 
-cl_int round_gws(cl_int gws, cl_int lws) {
-    return ((gws + lws - 1) / lws) * lws;
+cl_int round_up(int x, int y) {
+    return ((x + y - 1) / y) * y;
 }
