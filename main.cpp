@@ -39,7 +39,8 @@ int main(int argc, const char** argv) {
             cxxopts::value<int>()->default_value("0"))
         ("v,vector", "Kernel vectorization (valid values are 1, 4 or 16)",
             cxxopts::value<int>()->default_value("1"))
-        ("P,selectplatform", "Manually select platform in runtime");
+        ("P,selectplatform", "Manually select platform in runtime",
+            cxxopts::value<int>()->default_value("0"));
 
 
 
@@ -68,7 +69,7 @@ int main(int argc, const char** argv) {
 
     out_path = result["o"].as<std::string>();
     bool enable_profiling = result.count("p");
-    bool selectplatform = result.count("P");
+    int selectplatform = result["P"].as<int>();
 
     if (enable_profiling) std::cout << TERM_CYAN <<
         "Running with profiling enabled" << TERM_RESET << std::endl;

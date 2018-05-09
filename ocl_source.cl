@@ -94,8 +94,9 @@ void kernel automaton(
     const size_t local_id1 = get_local_id(1);
     const size_t lws0 = get_local_size(0);
     const size_t lws1 = get_local_size(1);
-    const size_t cache_height = lws0+2;
-    const bool iamoutofbound = get_global_id(0) >= width || get_global_id(1) >= height;
+    const size_t cache_height = lws1+2;
+    const int iamoutofbound = get_global_id(0) >= width || get_global_id(1) >= height;
+    if (iamoutofbound) return;
 
     // x: north, y: east, z: south, w: west
     uint4 neib_pos = (uint4){
@@ -113,10 +114,8 @@ void kernel automaton(
     uint local_pos = core_cache_column + (core_cache_row * cache_height);
 
     // write core pixel in cache
-    if (!iamoutofbound) {
-        cache_lattice[local_pos] = t0_lattice[pos];
-        cache_labels[local_pos] = t0_labels[pos];
-    }
+    cache_lattice[local_pos] = t0_lattice[pos];
+    cache_labels[local_pos] = t0_labels[pos];
 
     // Explicit "I am in _ border" declarations as reference. Will do as char4
     // bool i_am_in_north_border = get_local_id(1) == 0;
@@ -124,19 +123,38 @@ void kernel automaton(
     // bool i_am_in_south_border = get_local_id(1) == get_local_size(0)-1;
     // bool i_am_in_west_border = get_local_id(0) == 0;
 
-       
+    int4 local_border_status = (
+	    ((int4){local_id1, local_id0, local_id1, local_id0} ==
+	    (int4){0, lws0 - 1, lws1 - 1, 0})
+    );
+
+    /*int4 local_border_status = (int4){ 
+        get_local_id(1) == 0,                   // North 
+        get_local_id(0) == get_local_size(0)-1, // East 
+        get_local_id(1) == get_local_size(0)-1, // South 
+        get_local_id(0) == 0                    // West 
+    };*/
+
+    //local_border_status = local_border_status && (neib_pos != (uint4)pos);
+
+    //printf("N:%d E:%d S:%d W:%d\n", local_border_status.x, local_border_status.y, local_border_status.z, local_border_status.w);
+
+    /*uint4 local_neib_pos = (uint4){
+        local_border_status.x ? local_pos-cache_height : local_pos,
+        local_border_status.y ? local_pos+1 : local_pos,
+        local_border_status.z ? local_pos+cache_height : local_pos,
+        local_border_status.w ? local_pos-1 : local_pos
+    };*/
+
     uint4 local_neib_pos = (uint4){
         local_pos-cache_height,
         local_pos+1,
         local_pos+cache_height,
         local_pos-1
     };
+    //local_neib_pos = select((uint4)local_pos, local_neib_pos, local_border_status);
 
-    int4 local_border_status = (
-	    (int4)(get_local_id(1), get_local_id(0), get_local_id(1), get_local_id(0)) ==
-	    (int4)(0, get_local_size(0) - 1, get_local_size(1) - 1, 0));
-
-    local_neib_pos = select((uint4)local_pos, local_neib_pos, local_border_status);
+    //if (local_neib_pos.x >= img_size) printf("%u\n", local_neib_pos.x); // TODO: remove
 
     if (local_border_status.x) {
         cache_lattice[local_neib_pos.x] = t0_lattice[neib_pos.x];
@@ -157,7 +175,7 @@ void kernel automaton(
 
     barrier(CLK_LOCAL_MEM_FENCE); // wait for all work items to finish caching
 
-    if (iamoutofbound) return;
+    //if (iamoutofbound) return;
 
     uint pixel = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
 
@@ -166,10 +184,10 @@ void kernel automaton(
        local_pos
     };
 
-    uint u_tx = add_sat(cache_lattice[local_neib_pos.x], (pixel*(pos!=neib_pos.x)));
-    uint u_ty = add_sat(cache_lattice[local_neib_pos.y], (pixel*(pos!=neib_pos.y)));
-    uint u_tz = add_sat(cache_lattice[local_neib_pos.z], (pixel*(pos!=neib_pos.z)));
-    uint u_tw = add_sat(cache_lattice[local_neib_pos.w], (pixel*(pos!=neib_pos.w)));
+    uint u_tx = pos == neib_pos.x ? MAX_INT : add_sat(cache_lattice[local_neib_pos.x], pixel);
+    uint u_ty = pos == neib_pos.y ? MAX_INT : add_sat(cache_lattice[local_neib_pos.y], pixel);
+    uint u_tz = pos == neib_pos.z ? MAX_INT : add_sat(cache_lattice[local_neib_pos.z], pixel);
+    uint u_tw = pos == neib_pos.w ? MAX_INT : add_sat(cache_lattice[local_neib_pos.w], pixel);
 
     u_t = u_t.x > u_tx ? (uint2){u_tx, local_neib_pos.x} : u_t;
     u_t = u_t.x > u_ty ? (uint2){u_ty, local_neib_pos.y} : u_t;
@@ -205,7 +223,6 @@ void kernel color_watershed(
             index / width
         }
     );
-    if (get_global_id(0) < width && get_global_id(1) < height)
     write_imageui(
         outimage,
         (int2){get_global_id(0), get_global_id(1)},
