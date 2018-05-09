@@ -111,13 +111,6 @@ void kernel automaton(
     uint core_cache_row    = local_id1 + 1;
     
     uint local_pos = core_cache_column + (core_cache_row * cache_height);
-    
-    uint4 local_neib_pos = (uint4){
-        local_pos-cache_height,
-        local_pos+1,
-        local_pos+cache_height,
-        local_pos-1
-    };
 
     // write core pixel in cache
     if (!iamoutofbound) {
@@ -131,12 +124,19 @@ void kernel automaton(
     // bool i_am_in_south_border = get_local_id(1) == get_local_size(0)-1;
     // bool i_am_in_west_border = get_local_id(0) == 0;
 
-    char4 local_border_status = (char4){
-        get_local_id(1) == 0,                   // North
-        get_local_id(0) == get_local_size(0)-1, // East
-        get_local_id(1) == get_local_size(0)-1, // South
-        get_local_id(0) == 0                    // West
+       
+    uint4 local_neib_pos = (uint4){
+        local_pos-cache_height,
+        local_pos+1,
+        local_pos+cache_height,
+        local_pos-1
     };
+
+    int4 local_border_status = (
+	    (int4)(get_local_id(1), get_local_id(0), get_local_id(1), get_local_id(0)) ==
+	    (int4)(0, get_local_size(0) - 1, get_local_size(1) - 1, 0));
+
+    local_neib_pos = select((uint4)local_pos, local_neib_pos, local_border_status);
 
     if (local_border_status.x) {
         cache_lattice[local_neib_pos.x] = t0_lattice[neib_pos.x];
