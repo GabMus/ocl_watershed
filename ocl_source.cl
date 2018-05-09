@@ -92,15 +92,10 @@ void kernel automaton(
 
     const size_t local_id0 = get_local_id(0);
     const size_t local_id1 = get_local_id(1);
-
-    printf(
-        "***************\nget_local_size(0): %u\nget_local_size(1): %u\n***************\n",
-        get_local_size(0), get_local_size(1)
-    );
-
-    //printf("***************\nget_local_id(0) = %u\nget_local_id(1) = %u\n***************\n", get_local_id(0), get_local_id(1));
-
-    //if (local_id1 >3) printf("yes: %u\n", local_id1);
+    const size_t lws0 = get_local_size(0);
+    const size_t lws1 = get_local_size(1);
+    const size_t cache_height = lws0+2;
+    const bool iamoutofbound = get_global_id(0) >= width || get_global_id(1) >= height;
 
     // x: north, y: east, z: south, w: west
     uint4 neib_pos = (uint4){
@@ -111,32 +106,21 @@ void kernel automaton(
     };
 
     // all core indexes are x and y all +1. the formula below linearizes this concept
+
+    uint core_cache_column = local_id0 + 1;
+    uint core_cache_row    = local_id1 + 1;
     
-    uint local_pos = local_id0 +1 + (local_id1 * (get_local_size(0)+2));
+    uint local_pos = core_cache_column + (core_cache_row * cache_height);
     
     uint4 local_neib_pos = (uint4){
-        local_pos-get_local_size(0)-2,
+        local_pos-cache_height,
         local_pos+1,
-        local_pos+get_local_size(0)+2,
+        local_pos+cache_height,
         local_pos-1
     };
 
-    // TODO: REMOVE THE FOLLOWING, IT'S FOR DEBUG PURPOSES
-    //printf("workdim: %u\n", get_work_dim());
-    if (local_neib_pos.x >= (get_local_size(0)+2) * (get_local_size(0)+2)) {
-        /*printf(
-            "\n\n\nx local neighbor out of bound\n>>> local pos: %u\n<<< local ids:\n\t0: %u\n\t1: %u\n",
-            local_pos,
-            local_id0,
-            local_id1);*/
-    }
-    if (local_neib_pos.y >= (get_local_size(0)+2) * (get_local_size(0)+2)) printf("y local neighbor out of bound\n");
-    if (local_neib_pos.z >= (get_local_size(0)+2) * (get_local_size(0)+2)) printf("z local neighbor out of bound\n");
-    if (local_neib_pos.w >= (get_local_size(0)+2) * (get_local_size(0)+2)) printf("w local neighbor out of bound\n");
-    //printf("%d\n", get_local_size(0));
-
     // write core pixel in cache
-    if (pos < img_size) {
+    if (!iamoutofbound) {
         cache_lattice[local_pos] = t0_lattice[pos];
         cache_labels[local_pos] = t0_labels[pos];
     }
@@ -154,32 +138,32 @@ void kernel automaton(
         get_local_id(0) == 0                    // West
     };
 
-    if (local_border_status.x && neib_pos.x < img_size) {
+    if (local_border_status.x) {
         cache_lattice[local_neib_pos.x] = t0_lattice[neib_pos.x];
         cache_labels[local_neib_pos.x] = t0_labels[neib_pos.x];
     }
-    if (local_border_status.y && neib_pos.y < img_size) {
+    if (local_border_status.y) {
         cache_lattice[local_neib_pos.y] = t0_lattice[neib_pos.y];
         cache_labels[local_neib_pos.y] = t0_labels[neib_pos.y];
     }
-    if (local_border_status.z && neib_pos.z < img_size) {
+    if (local_border_status.z) {
         cache_lattice[local_neib_pos.z] = t0_lattice[neib_pos.z];
         cache_labels[local_neib_pos.z] = t0_labels[neib_pos.z];
     }
-    if (local_border_status.w && neib_pos.w < img_size) {
+    if (local_border_status.w) {
         cache_lattice[local_neib_pos.w] = t0_lattice[neib_pos.w];
         cache_labels[local_neib_pos.w] = t0_labels[neib_pos.w];
     }
 
     barrier(CLK_LOCAL_MEM_FENCE); // wait for all work items to finish caching
 
-    if (pos >= img_size) return;
+    if (iamoutofbound) return;
 
     uint pixel = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
 
     uint2 u_t=(uint2){
        cache_lattice[local_pos],
-       pos
+       local_pos
     };
 
     uint u_tx = add_sat(cache_lattice[local_neib_pos.x], (pixel*(pos!=neib_pos.x)));
@@ -221,7 +205,7 @@ void kernel color_watershed(
             index / width
         }
     );
-
+    if (get_global_id(0) < width && get_global_id(1) < height)
     write_imageui(
         outimage,
         (int2){get_global_id(0), get_global_id(1)},
