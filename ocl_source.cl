@@ -1,6 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
-constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_REPEAT | CLK_FILTER_LINEAR;
+constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_LINEAR;
 
 #define R_LUMA_MULT 0.2126f
 #define G_LUMA_MULT 0.7152f
@@ -143,6 +143,16 @@ void kernel automaton(
     //local_neib_pos = select((uint4)local_pos, local_neib_pos, local_border_status);
 
     //if (local_neib_pos.x >= img_size) printf("%u\n", local_neib_pos.x); // TODO: remove
+
+    /* doens't work: makes cuncurrent writes
+    cache_lattice[local_neib_pos.x] = local_border_status.x ? t0_lattice[neib_pos.x] : cache_lattice[local_neib_pos.x];
+    cache_lattice[local_neib_pos.y] = local_border_status.y ? t0_lattice[neib_pos.y] : cache_lattice[local_neib_pos.y];
+    cache_lattice[local_neib_pos.z] = local_border_status.z ? t0_lattice[neib_pos.z] : cache_lattice[local_neib_pos.z];
+    cache_lattice[local_neib_pos.w] = local_border_status.w ? t0_lattice[neib_pos.w] : cache_lattice[local_neib_pos.w];
+    cache_labels[local_neib_pos.x] = local_border_status.x ? t0_labels[neib_pos.x] : cache_labels[local_neib_pos.x];
+    cache_labels[local_neib_pos.y] = local_border_status.y ? t0_labels[neib_pos.y] : cache_labels[local_neib_pos.y];
+    cache_labels[local_neib_pos.z] = local_border_status.z ? t0_labels[neib_pos.z] : cache_labels[local_neib_pos.z];
+    cache_labels[local_neib_pos.w] = local_border_status.w ? t0_labels[neib_pos.w] : cache_labels[local_neib_pos.w];*/
 
     if (local_border_status.x) {
         cache_lattice[local_neib_pos.x] = t0_lattice[neib_pos.x];
