@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>Watershed transform implementation for GPU architectures in OpenCL</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="./github-markdown.css">
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+		<style>
+			canvas {
+				max-width: 1200px;
+			}
+		</style>
+    </head>
+    <body>
+        <div id="markdownContent" class="markdown-body">
+# Watershed transform implementation for GPU architectures in OpenCL
+
+### Gabriele Musco (emaildigabry@gmail.com)
+
+# Benchmarks
+
+<canvas id="benchmark-gtx-960"></canvas>
+
+| Automaton implementation | Execution Time (ms) |
+| --- | --- |
+| Local memory caching (LWS: 2) | 449.41 |
+| Local memory caching (LWS: 4) | 139.06 |
+| Local memory caching (LWS: 8) | 108.89 |
+| Local memory caching (LWS: 16) | 96.491 |
+| Local memory caching (LWS: 32) | 92.466 |
+| Global memory | 87.469 |
+
+        </div>
+        <script>
+            document.getElementById('markdownContent').innerHTML = marked(document.getElementById('markdownContent').innerHTML, {"sanitize": false});
+        </script>
+		<script>
+new Chart(document.getElementById('benchmark-gtx-960').getContext('2d'), {
+	"type": "horizontalBar",
+	"data": {
+		"labels": [
+		"Local memory caching (LWS: 2)",
+		"Local memory caching (LWS: 4)",
+		"Local memory caching (LWS: 8)",
+		"Local memory caching (LWS: 16)",
+		"Local memory caching (LWS: 32)",
+		"Global memory"
+		],
+		"datasets": [{
+			"label": "Execution time (ms)",
+			"data": [
+				449.41,
+				139.06,
+				108.89,
+				96.491,
+				92.466,
+				87.469
+			],
+			"backgroundColor": [
+				"rgba(255, 99, 132, 0.2)",
+				"rgba(54, 162, 235, 0.2)",
+				"rgba(255, 206, 86, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(153, 102, 255, 0.2)",
+				"rgba(255, 159, 64, 0.2)"
+			],
+			"borderColor": [
+				"rgba(255,99,132,1)",
+				"rgba(54, 162, 235, 1)",
+				"rgba(255, 206, 86, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(153, 102, 255, 1)",
+				"rgba(255, 159, 64, 1)"
+			],
+			"borderWidth": 1
+		}]
+	}
+});
+
+
+</script>
+
+    </body>
+</html>
