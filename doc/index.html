@@ -6,8 +6,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="./github-markdown.css">
 
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+		<script src="./Chart.min.js"></script>
+        <script src="./marked.min.js"></script>
 
 		<style>
 			canvas {
@@ -21,9 +21,64 @@
 
 ### Gabriele Musco (emaildigabry@gmail.com)
 
+---
+
+# Description
+
+In image processing, watershed is a segmentation algorithm that is based around the idea of treating the image like a topographic map, where the brightness of each pixel represents the height, and finds the lines that connect together the highest points.
+
+There are some different methods of treating the watershed, one of them is by topographic distance. Using this method it is possible to treat the image like a graph, and use a cellular automaton to implement a parallel version of the Bellman-Ford's shortest paths algorithm.
+
+# Implementation
+
+This implementation of the watershed transform is written using C++ for the host (CPU) code and OpenCL for the device (GPU) code.
+
+The fist step is to convert the input image (provided in the ppm format for convenience) to grayscale (this also brings the image to the linear space, as opposed to the gamma space that most - if not all - images use).
+
+Right after that the program applies a gradient convolution matrix to the grayscale image to find the local minima in it (the positions in which the values of the gradient image are 0).
+
+Then the program initializes two matrices of the same size as the image (lattice and labels) for the time t<sub>0</sub>. The lattice value for each pixel is 0 if it is a minimum, otherwise +&infin;; the label value for each pixel is the (linearized) pixel position if it is a minimum, otherwise 0.
+
+Once the t<sub>0</sub> matrices are initialized, the automaton is started in a loop, computing locally the new t<sub>i+1</sub> matrices using the data from the t<sub>i</sub> ones. At the end of each loop cycle, the automaton checks if the two sets of matrices are different; if so, the loop goes on, otherwise it stops, meaning that the watershed is complete.
+
+Finally a new image is created, where the color of each pixel in position (x, y) corresponds with the color of the pixel in the original image in the position indicated by the label in position (x, y).
+
+## The _Cellular Automaton_
+
+This is the core of the algorithm, as it computes the actual watershed segmentation.
+
+The automaton works locally for each pixel, analyzing it and its 4 nearest neighbors and deciding for each step of the loop to which segment it should belong to.
+
+There are 3 different versions of the automaton, each one being more suited for different hardware:
+
+- A global memory implementation, without any particular optimizations (target: newer GPUs with hardare caching, devices without a local memory like CPUs)
+- A local memory caching implementation, theorically more optimized (target: older GPUs without hardware caching)
+- A texture implementation, where the lattice and labels matrices data are stored inside OpenCL images
+
 # Benchmarks
 
+_Note: LWS indicates the Local Work Size. All values have to be considered to the power of two._
+
+## NVIDIA GTX 960 4GB
+
+Interestingly enough, the **global memory** implementation is slightly but noticeably faster compared to the biggest LWS possible for this GPU.
+
+This is probably due to the fact that modern (Maxwell and later) GPUs have a built in hardware caching system that appears to be faster than the one implemented in the program.
+
 <canvas id="benchmark-gtx-960"></canvas>
+
+| Automaton implementation | Execution Time (ms) |
+| --- | --- |
+| Local memory caching (LWS: 2) | 449.41 |
+| Local memory caching (LWS: 4) | 139.06 |
+| Local memory caching (LWS: 8) | 108.89 |
+| Local memory caching (LWS: 16) | 96.491 |
+| Local memory caching (LWS: 32) | 92.466 |
+| Global memory | 87.469 |
+
+## NVIDIA GTX 740M
+
+<canvas id="benchmark-gtx-740m"></canvas>
 
 | Automaton implementation | Execution Time (ms) |
 | --- | --- |
@@ -37,9 +92,8 @@
         </div>
         <script>
             document.getElementById('markdownContent').innerHTML = marked(document.getElementById('markdownContent').innerHTML, {"sanitize": false});
-        </script>
-		<script>
-new Chart(document.getElementById('benchmark-gtx-960').getContext('2d'), {
+
+var gtx_960_graph = new Chart(document.getElementById('benchmark-gtx-960').getContext('2d'), {
 	"type": "horizontalBar",
 	"data": {
 		"labels": [
@@ -61,24 +115,94 @@ new Chart(document.getElementById('benchmark-gtx-960').getContext('2d'), {
 				87.469
 			],
 			"backgroundColor": [
-				"rgba(255, 99, 132, 0.2)",
-				"rgba(54, 162, 235, 0.2)",
-				"rgba(255, 206, 86, 0.2)",
 				"rgba(75, 192, 192, 0.2)",
-				"rgba(153, 102, 255, 0.2)",
-				"rgba(255, 159, 64, 0.2)"
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)"
 			],
 			"borderColor": [
-				"rgba(255,99,132,1)",
-				"rgba(54, 162, 235, 1)",
-				"rgba(255, 206, 86, 1)",
 				"rgba(75, 192, 192, 1)",
-				"rgba(153, 102, 255, 1)",
-				"rgba(255, 159, 64, 1)"
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)"
 			],
 			"borderWidth": 1
 		}]
-	}
+	},
+    "options": {
+        tooltipTemplate: "<%= value %>",
+        showTooltips: true,
+        animation: {
+            onComplete: function() {
+                console.log(this);
+            }
+        },
+        onAnimationComplete: function() {
+            alert("dood");
+            //this.showTooltip(this, true);
+        },
+        tooltipEvents: []
+    }
+});
+
+var gtx_740m_graph = new Chart(document.getElementById('benchmark-gtx-740m').getContext('2d'), {
+	"type": "horizontalBar",
+	"data": {
+		"labels": [
+		"Local memory caching (LWS: 2)",
+		"Local memory caching (LWS: 4)",
+		"Local memory caching (LWS: 8)",
+		"Local memory caching (LWS: 16)",
+		"Local memory caching (LWS: 32)",
+		"Global memory"
+		],
+		"datasets": [{
+			"label": "Execution time (ms)",
+			"data": [
+				449.41,
+				139.06,
+				108.89,
+				96.491,
+				92.466,
+				87.469
+			],
+			"backgroundColor": [
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)",
+				"rgba(75, 192, 192, 0.2)"
+			],
+			"borderColor": [
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)"
+			],
+			"borderWidth": 1
+		}]
+	},
+    "options": {
+        tooltipTemplate: "<%= value %>",
+        showTooltips: true,
+        animation: {
+            onComplete: function() {
+                console.log(this);
+            }
+        },
+        onAnimationComplete: function() {
+            alert("dood");
+            //this.showTooltip(this, true);
+        },
+        tooltipEvents: []
+    }
 });
 
 
