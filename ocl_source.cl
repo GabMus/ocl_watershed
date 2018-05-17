@@ -87,6 +87,61 @@ void kernel init_t0_image(
     write_imageui(t0_labels, pos, pixval == 0 ? (uint)linearpos : (uint)0);
 }
 
+void kernel automaton_global(
+    read_only image2d_t luma_pic, // this contains the values for f(p)
+    int width,
+    int height,
+    global const uint* t0_lattice,
+    global const uint* t0_labels,
+    global uint* t1_lattice,
+    global uint* t1_labels,
+    global uint* are_diff) {
+
+    uint pos = get_global_id(0)+(get_global_id(1)*width);
+    // x: north, y: east, z: south, t: west
+
+    uint t0_lattice_pos = t0_lattice[pos];
+
+    uint4 neib_pos = (uint4){
+        get_global_id(1) != 0 ? pos-width : pos, // exists if it's not the first row
+        get_global_id(0) != (width-1) ? pos+1 : pos, // exists if it's not the last column
+        get_global_id(1) != (height-1) ? pos+width : pos, // exists if it's not the last row
+        get_global_id(0) != 0 ? pos-1 : pos, //exists if it's not the first column
+    };
+
+    uint pixel = read_imageui(luma_pic, (int2){get_global_id(0), get_global_id(1)}).x;
+
+    uint2 u_t=(uint2){
+       t0_lattice_pos,
+       pos
+    };
+
+    // possible u_t candidates
+    uint4 ut_cand = (uint4){
+        add_sat(t0_lattice[neib_pos.x], pixel),
+        add_sat(t0_lattice[neib_pos.y], pixel),
+        add_sat(t0_lattice[neib_pos.z], pixel),
+        add_sat(t0_lattice[neib_pos.w], pixel),
+    };
+
+    ut_cand = select(ut_cand, (uint4)MAX_INT, ((uint4)pos == neib_pos));
+
+    u_t = u_t.x > ut_cand.x ? (uint2){ut_cand.x, neib_pos.x} : u_t;
+    u_t = u_t.x > ut_cand.y ? (uint2){ut_cand.y, neib_pos.y} : u_t;
+    u_t = u_t.x > ut_cand.z ? (uint2){ut_cand.z, neib_pos.z} : u_t;
+    u_t = u_t.x > ut_cand.w ? (uint2){ut_cand.w, neib_pos.w} : u_t;
+
+    t1_lattice[pos] = u_t.x;
+
+    uint newlabel = t0_labels[u_t.y];
+    t1_labels[pos] = newlabel;
+
+    if (
+        t0_lattice_pos != u_t.x ||
+        t0_labels[pos] != newlabel
+    ) are_diff[0] = 1;
+}
+
 void kernel automaton(
     read_only image2d_t luma_pic, // this contains the values for f(p)
     int width,
