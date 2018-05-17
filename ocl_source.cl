@@ -74,6 +74,19 @@ void kernel init_t0(
     t0_labels[pos] = pixval == 0 ? (uint)pos : (uint)0;
 }
 
+void kernel init_t0_image(
+    write_only image2d_t t0_lattice,
+    write_only image2d_t t0_labels,
+    int width,
+    read_only image2d_t gradient_pic) {
+
+    uint pixval = read_imageui(gradient_pic, (int2){get_global_id(0), get_global_id(1)}).x;
+    int2 pos = {get_global_id(0), get_global_id(1)};
+    uint linearpos = get_global_id(0)+(get_global_id(1)*width);
+    write_imageui(t0_lattice, pos, pixval == 0 ? (uint)0 : (uint)MAX_INT);
+    write_imageui(t0_labels, pos, pixval == 0 ? (uint)linearpos : (uint)0);
+}
+
 void kernel automaton(
     read_only image2d_t luma_pic, // this contains the values for f(p)
     int width,
@@ -213,6 +226,81 @@ void kernel automaton(
     ) are_diff[0] = 1;
 }
 
+
+void kernel automaton_image(
+    read_only image2d_t luma_pic, // this contains the values for f(p)
+    int width,
+    int height,
+    read_only image2d_t t0_lattice,
+    read_only image2d_t t0_labels,
+    write_only image2d_t t1_lattice,
+    write_only image2d_t t1_labels,
+    global uint* are_diff) {
+
+    const uint x = get_global_id(0);
+    const uint y = get_global_id(1);
+    const uint img_size = width*height;
+
+    //const int iamoutofbound = x >= width || y >= height;
+    //if (iamoutofbound) return; // failsafe (the global work sizes can be bigger than the image sizes)
+
+    int2 pos = (int2){x, y};
+
+    // 0: north, 1: east, 2: south, 3: west, 4: pos
+    int2 neib_pos[5] = {
+        y != 0 ? (int2){x, y-1} : pos, // exists if it's not the first row
+        x != width-1 ? (int2){x+1, y} : pos, // exists if it's not the last column
+        y != height-1 ? (int2){x, y+1} : pos, // exists if it's not the last row
+        x != 0 ? (int2){x-1, y} : pos, //exists if it's not the first column
+        pos
+    };
+
+    uint pixel = read_imageui(luma_pic, sampler, pos).x;
+
+    uint lattice_at_pos = read_imageui(t0_lattice, sampler, pos).x;
+    uint label_at_pos = read_imageui(t0_labels, sampler, pos).x;
+
+    uint4 neib_lattice_vals = (uint4){
+        read_imageui(t0_lattice, sampler, neib_pos[0]).x,
+        read_imageui(t0_lattice, sampler, neib_pos[1]).x,
+        read_imageui(t0_lattice, sampler, neib_pos[2]).x,
+        read_imageui(t0_lattice, sampler, neib_pos[3]).x
+    };
+
+    uint2 u_t=(uint2){
+       lattice_at_pos,
+       4
+    };
+
+    // possible u_t candidates
+    uint4 ut_cand = add_sat(neib_lattice_vals, (uint4)pixel);
+
+    // This doesnt work with neib_pos as uint2* //ut_cand = select(ut_cand, (uint4)MAX_INT, ((uint4)pos == (neib_pos));
+    /* the above is a more efficient version of the following */
+    ut_cand = (uint4){
+        (pos.x == neib_pos[0].x && pos.y == neib_pos[0].y) ? MAX_INT : ut_cand.x,
+        (pos.x == neib_pos[1].x && pos.y == neib_pos[1].y) ? MAX_INT : ut_cand.y,
+        (pos.x == neib_pos[2].x && pos.y == neib_pos[2].y) ? MAX_INT : ut_cand.z,
+        (pos.x == neib_pos[3].x && pos.y == neib_pos[3].y) ? MAX_INT : ut_cand.w
+    };
+
+    u_t = u_t.x > ut_cand.x ? (uint2){ut_cand.x, 0} : u_t;
+    u_t = u_t.x > ut_cand.y ? (uint2){ut_cand.y, 1} : u_t;
+    u_t = u_t.x > ut_cand.z ? (uint2){ut_cand.z, 2} : u_t;
+    u_t = u_t.x > ut_cand.w ? (uint2){ut_cand.w, 3} : u_t;
+
+
+    write_imageui(t1_lattice, pos, u_t.x);
+    uint newlabel = read_imageui(t0_labels, sampler, neib_pos[u_t.y]).x;
+    write_imageui(t1_labels, pos, newlabel);
+
+    if (
+        lattice_at_pos != u_t.x || // equivalent to t1_lattice[pos] ||
+        label_at_pos != newlabel // equivalent to t1_labels[pos]
+    ) are_diff[0] = 1;
+}
+
+
 void kernel color_watershed(
     read_only image2d_t original,
     int width,
@@ -222,6 +310,31 @@ void kernel color_watershed(
 
     int pos = get_global_id(0) + (get_global_id(1) * width); 
     int index = labels[pos];
+
+    uint4 pixel = read_imageui(
+        original,
+        sampler,
+        (int2){
+            index % width,
+            index / width
+        }
+    );
+    write_imageui(
+        outimage,
+        (int2){get_global_id(0), get_global_id(1)},
+        pixel
+    );
+}
+
+void kernel color_watershed_image(
+    read_only image2d_t original,
+    int width,
+    int height,
+    read_only image2d_t labels,
+    write_only image2d_t outimage) {
+
+    int2 pos = (int2){get_global_id(0), get_global_id(1)}; 
+    int index = read_imageui(labels, sampler, pos).x;
 
     uint4 pixel = read_imageui(
         original,

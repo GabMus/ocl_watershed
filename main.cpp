@@ -37,8 +37,8 @@ int main(int argc, const char** argv) {
             cxxopts::value<std::string>()->default_value(pwd + "/out.ppm"))
         ("l,localworksize", "Local work size",
             cxxopts::value<int>()->default_value("0"))
-        /*("v,vector", "Kernel vectorization (valid values are 1, 4 or 16)",
-            cxxopts::value<int>()->default_value("1"))*/
+        ("a,automaton", "Automaton implementation (valid values: global, local, image)\n\tglobal: use global memory\n\tlocal: use local memory\n\timage: use texture memory",
+            cxxopts::value<std::string>()->default_value("global"))
         ("P,selectplatform", "Manually select platform in runtime",
             cxxopts::value<int>()->default_value("0"));
 
@@ -58,14 +58,13 @@ int main(int argc, const char** argv) {
     }
 
     int lws_cli = result["l"].as<int>();
-    /*int vectorization = result["v"].as<int>();
-
-    if (vectorization != 1 && vectorization != 4 && vectorization != 16) {
+    std::string automaton_memory = result["a"].as<std::string>();
+    if (automaton_memory != "global" && automaton_memory != "local" && automaton_memory != "image") {
         std::cout << TERM_RED <<
-            "WARNING: provided kernel vectorization is invalid (valid values are 1, 4 or 16)\n         Falling back to 1" << 
+            "WARNING: provided automaton implementation argument (-a, --automaton) invalid. Falling back to global" <<
             TERM_RESET << std::endl;
-        vectorization = 1;
-    }*/
+        automaton_memory = "global";
+    }
 
     out_path = result["o"].as<std::string>();
     bool enable_profiling = result.count("p");
@@ -174,8 +173,12 @@ int main(int argc, const char** argv) {
     cl::Kernel kernel_make_luma_image = cl::Kernel(program, "make_luma_image");
     cl::Kernel kernel_make_gradient = cl::Kernel(program, "make_gradient");
     cl::Kernel kernel_init_t0 = cl::Kernel(program, "init_t0");
+    cl::Kernel kernel_init_t0_image = cl::Kernel(program, "init_t0_image");
     cl::Kernel kernel_automaton = cl::Kernel(program, "automaton");
+    cl::Kernel kernel_automaton_image = cl::Kernel(program, "automaton_image");
+    //TODO //cl::Kernel kernel_automaton_global = cl::Kernel(program, "automaton_global");
     cl::Kernel kernel_color_watershed = cl::Kernel(program, "color_watershed");
+    cl::Kernel kernel_color_watershed_image = cl::Kernel(program, "color_watershed_image");
 
     kernel_make_luma_image.setArg(0, cl_input_image);
     kernel_make_luma_image.setArg(1, cl_luma_image);
@@ -199,129 +202,274 @@ int main(int argc, const char** argv) {
 
     //queue.finish();
 
-    kernel_init_t0.setArg(0, cl_t0_lattice);
-    kernel_init_t0.setArg(1, cl_t0_labels);
-    kernel_init_t0.setArg(2, bmp_width);
-    kernel_init_t0.setArg(3, cl_gradient_image);
+    if (automaton_memory == "global" || automaton_memory == "local") {
 
-    queue.enqueueNDRangeKernel(
-                kernel_init_t0,
-                cl::NullRange,
-                cl::NDRange(bmp_width, bmp_height),
-                cl::NullRange);
+        kernel_init_t0.setArg(0, cl_t0_lattice);
+        kernel_init_t0.setArg(1, cl_t0_labels);
+        kernel_init_t0.setArg(2, bmp_width);
+        kernel_init_t0.setArg(3, cl_gradient_image);
 
-    queue.finish();
-
-    // Preferred Group Size Multiple
-    cl_int pref_gs_mult = kernel_automaton.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
-            default_device,
-            &err);
-    cl_check(err, "Getting preferred group size multiple");
-
-    cl_int lws = lws_cli ? lws_cli : pref_gs_mult;
-
-    cl_int gws_width = round_up(bmp_width, lws);
-    cl_int gws_height = round_up(bmp_height, lws);
-    
-#if DEBUG
-    std::cout << "Preferred Group Size Multiple: " <<
-        pref_gs_mult << std::endl;
-    std::cout << "bmp size: " << bmp_width << "x" << bmp_height << std::endl <<
-        "gws: " << gws_width << "x" << gws_height << std::endl;
-#endif
-
-    kernel_automaton.setArg(0, cl_luma_image);
-    kernel_automaton.setArg(1, bmp_width);
-    kernel_automaton.setArg(2, bmp_height);
-    kernel_automaton.setArg(7, cl_are_diff);
-    kernel_automaton.setArg(8, cl::Local(
-                sizeof(cl_uint) * ( (lws+2) * (lws+2) )
-    ));
-    kernel_automaton.setArg(9, cl::Local(
-                sizeof(cl_uint) * ( (lws+2) * (lws+2) )
-    ));
-
-    /*  Graphical explanation of the cache size
-        /xxx/       0s are the core of the cache
-        x000x       xs are the workgroup neighbors
-        x000x       /s are unused memory areas that are necessary for 2d cache mapping
-        x000x
-        /xxx/
-     */
-
-    double total_time = 0;
-    int automaton_iterations = 0;
-
-    for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
-        kernel_automaton.setArg(3, cl_t0_lattice);
-        kernel_automaton.setArg(4, cl_t0_labels);
-        kernel_automaton.setArg(5, cl_t1_lattice);
-        kernel_automaton.setArg(6, cl_t1_labels);
-
-        host_init_are_diff[0] = 0;
-        queue.enqueueWriteBuffer(cl_are_diff, CL_TRUE, 0, sizeof(cl_uint), host_init_are_diff);
-        queue.finish();
-
-        // Insert profiling here
-        if (enable_profiling) {
-            total_time += profile_kernel(
-                        queue,
-                        kernel_automaton,
-                        cl::NullRange,
-                        cl::NDRange(gws_width, gws_height),
-                        cl::NDRange(lws, lws),
-                        "Step " + std::to_string(i) + ": ");
-            automaton_iterations++;
-        }
-        else {
-            err = queue.enqueueNDRangeKernel(
-                        kernel_automaton,
-                        cl::NullRange,
-                        cl::NDRange(gws_width, gws_height),
-                        cl::NDRange(lws, lws));
-            queue.finish();
-            cl_check(err, "Running automaton kernel (step #"+std::to_string(i)+")");
-        }
-
-        queue.enqueueReadBuffer(cl_are_diff, CL_TRUE, 0, sizeof(uint32_t), host_init_are_diff);
-        queue.finish();
-
-        if (!host_init_are_diff[0])  {
-            std::cout << TERM_CYAN <<
-                "Baling out early from automaton loop at step #" << i <<
-                std::endl << TERM_RESET;
-            break;
-        }
-
-        std::swap(cl_t0_labels, cl_t1_labels);
-        std::swap(cl_t0_lattice, cl_t1_lattice);
-    }
-
-    if (enable_profiling) std::cout << TERM_GREEN << "Total automaton time: " <<
-            std::setprecision(5) <<
-            total_time << "ms" << std::endl <<
-            "Mean automaton time: " << 
-            total_time/(double)automaton_iterations << "ms"
-            TERM_RESET << std::endl;
-
-    queue.finish();
-
-    kernel_color_watershed.setArg(0, cl_input_image);
-    kernel_color_watershed.setArg(1, bmp_width);
-    kernel_color_watershed.setArg(2, bmp_height);
-    kernel_color_watershed.setArg(3, cl_t1_labels);
-    kernel_color_watershed.setArg(4, cl_output_image);
-
-    err = queue.enqueueNDRangeKernel(
-                    kernel_color_watershed,
+        queue.enqueueNDRangeKernel(
+                    kernel_init_t0,
                     cl::NullRange,
                     cl::NDRange(bmp_width, bmp_height),
                     cl::NullRange);
 
-    cl_check(err, "Coloring watershed");
+        queue.finish();
 
-    queue.finish();
+    }
+    
+    if (automaton_memory == "local") {
 
+        // Preferred Group Size Multiple
+        cl_int pref_gs_mult = kernel_automaton.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+                default_device,
+                &err);
+        cl_check(err, "Getting preferred group size multiple");
+
+        cl_int lws = lws_cli ? lws_cli : pref_gs_mult;
+
+        cl_int gws_width = round_up(bmp_width, lws);
+        cl_int gws_height = round_up(bmp_height, lws);
+        
+#if DEBUG
+        std::cout << "Preferred Group Size Multiple: " <<
+            pref_gs_mult << std::endl;
+        std::cout << "bmp size: " << bmp_width << "x" << bmp_height << std::endl <<
+            "gws: " << gws_width << "x" << gws_height << std::endl;
+#endif
+
+        kernel_automaton.setArg(0, cl_luma_image);
+        kernel_automaton.setArg(1, bmp_width);
+        kernel_automaton.setArg(2, bmp_height);
+        kernel_automaton.setArg(7, cl_are_diff);
+        kernel_automaton.setArg(8, cl::Local(
+                    sizeof(cl_uint) * ( (lws+2) * (lws+2) )
+        ));
+        kernel_automaton.setArg(9, cl::Local(
+                    sizeof(cl_uint) * ( (lws+2) * (lws+2) )
+        ));
+
+        /*  Graphical explanation of the cache size
+            /xxx/       0s are the core of the cache
+            x000x       xs are the workgroup neighbors
+            x000x       /s are unused memory areas that are necessary for 2d cache mapping
+            x000x
+            /xxx/
+         */
+
+        double total_time = 0;
+        int automaton_iterations = 0;
+
+        for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
+            kernel_automaton.setArg(3, cl_t0_lattice);
+            kernel_automaton.setArg(4, cl_t0_labels);
+            kernel_automaton.setArg(5, cl_t1_lattice);
+            kernel_automaton.setArg(6, cl_t1_labels);
+
+            host_init_are_diff[0] = 0;
+            queue.enqueueWriteBuffer(cl_are_diff, CL_TRUE, 0, sizeof(cl_uint), host_init_are_diff);
+            queue.finish();
+
+            // Insert profiling here
+            if (enable_profiling) {
+                total_time += profile_kernel(
+                            queue,
+                            kernel_automaton,
+                            cl::NullRange,
+                            cl::NDRange(gws_width, gws_height),
+                            cl::NDRange(lws, lws),
+                            "Step " + std::to_string(i) + ": ");
+                automaton_iterations++;
+            }
+            else {
+                err = queue.enqueueNDRangeKernel(
+                            kernel_automaton,
+                            cl::NullRange,
+                            cl::NDRange(gws_width, gws_height),
+                            cl::NDRange(lws, lws));
+                queue.finish();
+                cl_check(err, "Running automaton kernel (step #"+std::to_string(i)+")");
+            }
+
+            queue.enqueueReadBuffer(cl_are_diff, CL_TRUE, 0, sizeof(uint32_t), host_init_are_diff);
+            queue.finish();
+
+            if (!host_init_are_diff[0])  {
+                std::cout << TERM_CYAN <<
+                    "Baling out early from automaton loop at step #" << i <<
+                    std::endl << TERM_RESET;
+                break;
+            }
+
+            std::swap(cl_t0_labels, cl_t1_labels);
+            std::swap(cl_t0_lattice, cl_t1_lattice);
+        }
+
+        if (enable_profiling) std::cout << TERM_GREEN << "Total automaton time: " <<
+                std::setprecision(5) <<
+                total_time << "ms" << std::endl <<
+                "Mean automaton time: " << 
+                total_time/(double)automaton_iterations << "ms"
+                TERM_RESET << std::endl;
+
+        queue.finish();
+
+    }
+    else if (automaton_memory == "image") {
+
+        cl::Image2D cl_t0_lattice_image = cl::Image2D(
+                    context,
+                    CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_R, CL_UNSIGNED_INT32),
+                    bmp_width, bmp_height,
+                    0,
+                    NULL,
+                    &err);
+        cl_check(err, "Creating luma image");
+
+        cl::Image2D cl_t1_lattice_image = cl::Image2D(
+                    context,
+                    CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_R, CL_UNSIGNED_INT32),
+                    bmp_width, bmp_height,
+                    0,
+                    NULL,
+                    &err);
+        cl_check(err, "Creating luma image");
+
+        cl::Image2D cl_t0_labels_image = cl::Image2D(
+                    context,
+                    CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_R, CL_UNSIGNED_INT32),
+                    bmp_width, bmp_height,
+                    0,
+                    NULL,
+                    &err);
+        cl_check(err, "Creating luma image");
+
+        cl::Image2D cl_t1_labels_image = cl::Image2D(
+                    context,
+                    CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_R, CL_UNSIGNED_INT32),
+                    bmp_width, bmp_height,
+                    0,
+                    NULL,
+                    &err);
+        cl_check(err, "Creating luma image");
+        
+        kernel_init_t0_image.setArg(0, cl_t0_lattice_image);
+        kernel_init_t0_image.setArg(1, cl_t0_labels_image);
+        kernel_init_t0_image.setArg(2, bmp_width);
+        kernel_init_t0_image.setArg(3, cl_gradient_image);
+
+        queue.enqueueNDRangeKernel(
+                    kernel_init_t0_image,
+                    cl::NullRange,
+                    cl::NDRange(bmp_width, bmp_height),
+                    cl::NullRange);
+
+        queue.finish();
+
+
+        kernel_automaton_image.setArg(0, cl_luma_image);
+        kernel_automaton_image.setArg(1, bmp_width);
+        kernel_automaton_image.setArg(2, bmp_height);
+        kernel_automaton_image.setArg(7, cl_are_diff);
+        
+        double total_time = 0;
+        int automaton_iterations = 0;
+
+        for (int i=0; i<=std::max(bmp_width, bmp_height); i++) {
+            kernel_automaton_image.setArg(3, cl_t0_lattice_image);
+            kernel_automaton_image.setArg(4, cl_t0_labels_image);
+            kernel_automaton_image.setArg(5, cl_t1_lattice_image);
+            kernel_automaton_image.setArg(6, cl_t1_labels_image);
+
+            host_init_are_diff[0] = 0;
+            queue.enqueueWriteBuffer(cl_are_diff, CL_TRUE, 0, sizeof(cl_uint), host_init_are_diff);
+            queue.finish();
+
+            // Insert profiling here
+            if (enable_profiling) {
+                total_time += profile_kernel(
+                            queue,
+                            kernel_automaton_image,
+                            cl::NullRange,
+                            cl::NDRange(bmp_width, bmp_height),
+                            cl::NullRange,
+                            "Step " + std::to_string(i) + ": ");
+                automaton_iterations++;
+            }
+            else {
+                err = queue.enqueueNDRangeKernel(
+                            kernel_automaton_image,
+                            cl::NullRange,
+                            cl::NDRange(bmp_width, bmp_height),
+                            cl::NullRange);
+                queue.finish();
+                cl_check(err, "Running automaton kernel (step #"+std::to_string(i)+")");
+            }
+
+            queue.enqueueReadBuffer(cl_are_diff, CL_TRUE, 0, sizeof(uint32_t), host_init_are_diff);
+            queue.finish();
+
+            if (!host_init_are_diff[0])  {
+                std::cout << TERM_CYAN <<
+                    "Baling out early from automaton loop at step #" << i <<
+                    std::endl << TERM_RESET;
+                break;
+            }
+
+            std::swap(cl_t0_labels_image, cl_t1_labels_image);
+            std::swap(cl_t0_lattice_image, cl_t1_lattice_image);
+        }
+
+        if (enable_profiling) std::cout << TERM_GREEN << "Total automaton time: " <<
+                std::setprecision(5) <<
+                total_time << "ms" << std::endl <<
+                "Mean automaton time: " << 
+                total_time/(double)automaton_iterations << "ms"
+                TERM_RESET << std::endl;
+
+        queue.finish();
+
+        kernel_color_watershed_image.setArg(0, cl_input_image);
+        kernel_color_watershed_image.setArg(1, bmp_width);
+        kernel_color_watershed_image.setArg(2, bmp_height);
+        kernel_color_watershed_image.setArg(3, cl_t1_labels_image);
+        kernel_color_watershed_image.setArg(4, cl_output_image);
+
+        err = queue.enqueueNDRangeKernel(
+                        kernel_color_watershed_image,
+                        cl::NullRange,
+                        cl::NDRange(bmp_width, bmp_height),
+                        cl::NullRange);
+
+        cl_check(err, "Coloring watershed");
+
+        queue.finish();
+
+    }
+
+    if (automaton_memory == "global" || automaton_memory == "local") {
+        kernel_color_watershed.setArg(0, cl_input_image);
+        kernel_color_watershed.setArg(1, bmp_width);
+        kernel_color_watershed.setArg(2, bmp_height);
+        kernel_color_watershed.setArg(3, cl_t1_labels);
+        kernel_color_watershed.setArg(4, cl_output_image);
+
+        err = queue.enqueueNDRangeKernel(
+                        kernel_color_watershed,
+                        cl::NullRange,
+                        cl::NDRange(bmp_width, bmp_height),
+                        cl::NullRange);
+
+        cl_check(err, "Coloring watershed");
+
+        queue.finish();
+    }
+    
     uint8_t* host_outimage = new uint8_t[bmp_width*bmp_height*4];
     uint8_t* rgb_outimage = new uint8_t[bmp_width*bmp_height*3];
 
