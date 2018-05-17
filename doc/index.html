@@ -13,6 +13,20 @@
 			canvas {
 				max-width: 1200px;
 			}
+
+            #markdownContent img {
+                display: block;
+                margin: auto;
+            }
+
+            #markdownContent img:active {
+                position: fixed;
+                max-width: 100vw;
+                max-height: 100vh;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
 		</style>
     </head>
     <body>
@@ -88,6 +102,15 @@ This is probably due to the fact that modern (Maxwell and later) GPUs have a bui
 | Local memory caching (LWS: 16) | 96.491 |
 | Local memory caching (LWS: 32) | 92.466 |
 | Global memory | 87.469 |
+
+# Examples
+
+| Original | Watershed |
+| --- | --- |
+| ![Grass](./img/grass.png) | ![Grass watershed](./img/grasswatershed.png) |
+| ![Lenna](./img/lenna.png) | ![Lenna watershed](./img/lennawatershed.png) |
+| ![Bunny](./img/bbb.png) | ![Bunny watershed](./img/bbbwatershed.png) |
+| ![Parrot feathers](./img/parrotfeathers.png) | ![Parrot feathers](./img/parrotfeatherswatershed.png) |
 
         </div>
         <script>
