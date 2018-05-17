@@ -15,7 +15,7 @@ std::string read_kernel(std::string kernel_path) {
     return sourceCode;
 }
 
-cl::Device ocl_get_default_device() {
+cl::Device ocl_get_default_device(int selectplatform=0) {
     // get all platforms
     std::vector<cl::Platform> all_platforms;
     cl::Platform::get(&all_platforms);
@@ -31,7 +31,15 @@ cl::Device ocl_get_default_device() {
         std::cout << "#" << i << ": " << all_platforms[i].getInfo<CL_PLATFORM_NAME>() << std::endl;
     }
 
-    cl::Platform default_platform = all_platforms[0];
+    int platformid = 0;
+    if (selectplatform >=0 && selectplatform < howmany_platforms) {
+        platformid = selectplatform;
+    }
+    else {
+        std::cerr << "Error: selected platform invalid. Falling back to 0\n";
+    }
+
+    cl::Platform default_platform = all_platforms[platformid];
     std::cout << "Using default platform " <<
                  TERM_BOLD <<
                  default_platform.getInfo<CL_PLATFORM_NAME>() <<
@@ -64,7 +72,7 @@ double profile_kernel(
         std::string message="") {
     
     cl::Event event;
-    queue.enqueueNDRangeKernel(
+    int err = queue.enqueueNDRangeKernel(
                 kernel,
                 offset,
                 global,
@@ -73,6 +81,7 @@ double profile_kernel(
                 &event);
     event.wait();
     queue.finish();
+    cl_check(err, "Running automaton kernel ("+message+"\b\b)");
     
     cl_ulong time_start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
     cl_ulong time_end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
@@ -88,4 +97,8 @@ double profile_kernel(
             TERM_RESET << std::endl;
 
     return milliseconds;
+}
+
+cl_int round_up(int x, int y) {
+    return ((x + y - 1) / y) * y;
 }
