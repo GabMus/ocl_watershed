@@ -73,41 +73,80 @@ There are 3 different versions of the automaton, each one being more suited for 
 
 _Note: LWS indicates the Local Work Size. All values have to be considered to the power of two._
 
+For each device, I benchmarked two images (shown in the [Examples](#examples) section): _grass_ and _toronto_.
+
 ## NVIDIA GTX 960 4GB
+
+### Grass
 
 Interestingly enough, the **global memory** implementation is slightly but noticeably faster compared to the biggest LWS possible for this GPU.
 
 This is probably due to the fact that modern (Maxwell and later) GPUs have a built in hardware caching system that appears to be faster than the one implemented in the program.
 
-<canvas id="benchmark-gtx-960"></canvas>
+<canvas id="benchmark-grass-gtx-960"></canvas>
 
 | Automaton implementation | Execution Time (ms) |
 | --- | --- |
-| Local memory caching (LWS: 2) | 449.41 |
-| Local memory caching (LWS: 4) | 139.06 |
-| Local memory caching (LWS: 8) | 108.89 |
-| Local memory caching (LWS: 16) | 96.491 |
-| Local memory caching (LWS: 32) | 92.466 |
-| Global memory | 87.469 |
+| Texture memory                 | 314.70 |
+| Local memory caching (LWS: 2)  | 442.45 |
+| Local memory caching (LWS: 4)  | 134.47 |
+| Local memory caching (LWS: 8)  | 104.27 |
+| Local memory caching (LWS: 16) | 97.286 |
+| Local memory caching (LWS: 32) | 94.387 |
+| Global memory                  | 85.289 |
 
-## NVIDIA GTX 740M
+### Toronto
 
-<canvas id="benchmark-gtx-740m"></canvas>
+<canvas id="benchmark-toronto-gtx-960"></canvas>
 
 | Automaton implementation | Execution Time (ms) |
 | --- | --- |
-| Local memory caching (LWS: 2) | 449.41 |
-| Local memory caching (LWS: 4) | 139.06 |
-| Local memory caching (LWS: 8) | 108.89 |
-| Local memory caching (LWS: 16) | 96.491 |
-| Local memory caching (LWS: 32) | 92.466 |
-| Global memory | 87.469 |
+| Texture memory                 | 2464.6 |
+| Local memory caching (LWS: 2)  | 401.87 |
+| Local memory caching (LWS: 4)  | 141.03 |
+| Local memory caching (LWS: 8)  | 92.541 |
+| Local memory caching (LWS: 16) | 81.911 |
+| Local memory caching (LWS: 32) | 81.454 |
+| Global memory                  | 1688.5 |
+
+
+## NVIDIA GTX 760 2GB
+
+### Grass
+
+<canvas id="benchmark-grass-gtx-760"></canvas>
+
+| Automaton implementation | Execution Time (ms) |
+| --- | --- |
+| Texture memory                 | 292.43 |
+| Local memory caching (LWS: 2)  | 1513.0 |
+| Local memory caching (LWS: 4)  | 464.19 |
+| Local memory caching (LWS: 8)  | 161.69 |
+| Local memory caching (LWS: 16) | 107.81 |
+| Local memory caching (LWS: 32) | 94.520 |
+| Global memory                  | 74.223 |
+
+### Toronto
+
+<canvas id="benchmark-toronto-gtx-760"></canvas>
+
+| Automaton implementation | Execution Time (ms) |
+| --- | --- |
+| Texture memory                 | 3606.2 |
+| Local memory caching (LWS: 2)  | 1334.4 |
+| Local memory caching (LWS: 4)  | 416.10 |
+| Local memory caching (LWS: 8)  | 151.13 |
+| Local memory caching (LWS: 16) | 102.46 |
+| Local memory caching (LWS: 32) | 94.520 |
+| Global memory                  | 88.670 |
+
 
 # Examples
 
 | Original | Watershed |
 | --- | --- |
 | ![Grass](./img/grass.png) | ![Grass watershed](./img/grasswatershed.png) |
+| ![Toronto](./img/toronto.png) | ![Toronto watershed](./img/torontowatershed.png) |
 | ![Lenna](./img/lenna.png) | ![Lenna watershed](./img/lennawatershed.png) |
 | ![Bunny](./img/bbb.png) | ![Bunny watershed](./img/bbbwatershed.png) |
 | ![Parrot feathers](./img/parrotfeathers.png) | ![Parrot feathers](./img/parrotfeatherswatershed.png) |
@@ -116,10 +155,11 @@ This is probably due to the fact that modern (Maxwell and later) GPUs have a bui
         <script>
             document.getElementById('markdownContent').innerHTML = marked(document.getElementById('markdownContent').innerHTML, {"sanitize": false});
 
-var gtx_960_graph = new Chart(document.getElementById('benchmark-gtx-960').getContext('2d'), {
+var grass_gtx_960_graph = new Chart(document.getElementById('benchmark-grass-gtx-960').getContext('2d'), {
 	"type": "horizontalBar",
 	"data": {
 		"labels": [
+		"Texture memory",
 		"Local memory caching (LWS: 2)",
 		"Local memory caching (LWS: 4)",
 		"Local memory caching (LWS: 8)",
@@ -130,22 +170,25 @@ var gtx_960_graph = new Chart(document.getElementById('benchmark-gtx-960').getCo
 		"datasets": [{
 			"label": "Execution time (ms)",
 			"data": [
-				449.41,
-				139.06,
-				108.89,
-				96.491,
-				92.466,
-				87.469
+                314.7,
+                442.45,
+                134.47,
+                104.27,
+                97.286,
+                94.387,
+                85.289
 			],
 			"backgroundColor": [
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)"
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)"
 			],
 			"borderColor": [
+				"rgba(75, 192, 192, 1)",
 				"rgba(75, 192, 192, 1)",
 				"rgba(75, 192, 192, 1)",
 				"rgba(75, 192, 192, 1)",
@@ -155,27 +198,14 @@ var gtx_960_graph = new Chart(document.getElementById('benchmark-gtx-960').getCo
 			],
 			"borderWidth": 1
 		}]
-	},
-    "options": {
-        tooltipTemplate: "<%= value %>",
-        showTooltips: true,
-        animation: {
-            onComplete: function() {
-                console.log(this);
-            }
-        },
-        onAnimationComplete: function() {
-            alert("dood");
-            //this.showTooltip(this, true);
-        },
-        tooltipEvents: []
-    }
+	}
 });
 
-var gtx_740m_graph = new Chart(document.getElementById('benchmark-gtx-740m').getContext('2d'), {
+var toronto_gtx_960_graph = new Chart(document.getElementById('benchmark-toronto-gtx-960').getContext('2d'), {
 	"type": "horizontalBar",
 	"data": {
 		"labels": [
+		"Texture memory",
 		"Local memory caching (LWS: 2)",
 		"Local memory caching (LWS: 4)",
 		"Local memory caching (LWS: 8)",
@@ -186,22 +216,25 @@ var gtx_740m_graph = new Chart(document.getElementById('benchmark-gtx-740m').get
 		"datasets": [{
 			"label": "Execution time (ms)",
 			"data": [
-				449.41,
-				139.06,
-				108.89,
-				96.491,
-				92.466,
-				87.469
+                2464.6,
+                401.87,
+                141.03,
+                92.541,
+                81.911,
+                81.454,
+                1688.5
 			],
 			"backgroundColor": [
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)",
-				"rgba(75, 192, 192, 0.2)"
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)"
 			],
 			"borderColor": [
+				"rgba(75, 192, 192, 1)",
 				"rgba(75, 192, 192, 1)",
 				"rgba(75, 192, 192, 1)",
 				"rgba(75, 192, 192, 1)",
@@ -211,23 +244,100 @@ var gtx_740m_graph = new Chart(document.getElementById('benchmark-gtx-740m').get
 			],
 			"borderWidth": 1
 		}]
-	},
-    "options": {
-        tooltipTemplate: "<%= value %>",
-        showTooltips: true,
-        animation: {
-            onComplete: function() {
-                console.log(this);
-            }
-        },
-        onAnimationComplete: function() {
-            alert("dood");
-            //this.showTooltip(this, true);
-        },
-        tooltipEvents: []
-    }
+	}
 });
 
+var grass_gtx_760_graph = new Chart(document.getElementById('benchmark-grass-gtx-760').getContext('2d'), {
+	"type": "horizontalBar",
+	"data": {
+		"labels": [
+		"Texture memory",
+		"Local memory caching (LWS: 2)",
+		"Local memory caching (LWS: 4)",
+		"Local memory caching (LWS: 8)",
+		"Local memory caching (LWS: 16)",
+		"Local memory caching (LWS: 32)",
+		"Global memory"
+		],
+		"datasets": [{
+			"label": "Execution time (ms)",
+			"data": [
+                292.43,
+                1513.0,
+                464.19,
+                161.69,
+                107.81,
+                94.520,
+                74.223
+			],
+			"backgroundColor": [
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)"
+			],
+			"borderColor": [
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)"
+			],
+			"borderWidth": 1
+		}]
+	}
+});
+
+var toronto_gtx_760_graph = new Chart(document.getElementById('benchmark-toronto-gtx-760').getContext('2d'), {
+	"type": "horizontalBar",
+	"data": {
+		"labels": [
+		"Texture memory",
+		"Local memory caching (LWS: 2)",
+		"Local memory caching (LWS: 4)",
+		"Local memory caching (LWS: 8)",
+		"Local memory caching (LWS: 16)",
+		"Local memory caching (LWS: 32)",
+		"Global memory"
+		],
+		"datasets": [{
+			"label": "Execution time (ms)",
+			"data": [
+                3606.2,
+                1334.4,
+                416.10,
+                151.13,
+                102.46,
+                94.520,
+                88.670
+			],
+			"backgroundColor": [
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)",
+				"rgba(75, 192, 192, 0.8)"
+			],
+			"borderColor": [
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)",
+				"rgba(75, 192, 192, 1)"
+			],
+			"borderWidth": 1
+		}]
+	}
+});
 
 </script>
 
