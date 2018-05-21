@@ -115,6 +115,42 @@ Weirdly, while tests with other images (of which *grass* is a clear example) sho
 | Local memory caching (LWS: 32) | 81.454 |
 | Global memory                  | 1688.5 |
 
+## NVIDIA GTX 1050 Ti Mobile 4GB
+
+The 1050 Ti Mobile has a better performance using the **texture** implementation, possibly thanks to potential improvements in this regard in the *Pascal* architecture.
+
+Also, the version with a LWS of 32 is a little slower than the one with a LWS of 16. This is probably because of work group size differences with other cards, expecially considering this is a mobile GPU.
+
+As for everything else, the performance is pretty much on par with the [GTX 960](#nvidia-gtx-960-4gb).
+
+### Grass
+
+<canvas id="benchmark-grass-gtx-1050ti-m"></canvas>
+
+| Automaton implementation | Execution Time (ms) |
+| --- | --- |
+| Texture memory                 | 143.00 |
+| Local memory caching (LWS: 2)  | 442.91 |
+| Local memory caching (LWS: 4)  | 136.28 |
+| Local memory caching (LWS: 8)  | 90.681 |
+| Local memory caching (LWS: 16) | 78.036 |
+| Local memory caching (LWS: 32) | 82.168 |
+| Global memory                  | 69.535 |
+
+### Toronto
+
+<canvas id="benchmark-toronto-gtx-1050ti-m"></canvas>
+
+| Automaton implementation | Execution Time (ms) |
+| --- | --- |
+| Texture memory                 | 2411.7 |
+| Local memory caching (LWS: 2)  | 390.05 |
+| Local memory caching (LWS: 4)  | 128.36 |
+| Local memory caching (LWS: 8)  | 84.678 |
+| Local memory caching (LWS: 16) | 71.489 |
+| Local memory caching (LWS: 32) | 72.640 |
+| Global memory                  | 1718.3 |
+
 ## NVIDIA GTX 760 2GB
 
 ### Grass
@@ -208,7 +244,7 @@ var multicolorborder = [
     "rgba(155, 88, 44, 1)"
 ];
 
-var numdevices = 2;
+var numdevices = 3;
 
 var bench_data = [
     [
@@ -224,6 +260,20 @@ var bench_data = [
                 97.286,
                 94.387,
                 85.289
+            ]
+        },
+        {
+            'device': 'NVIDIA GTX 1050 Ti Mobile',
+            'bench': 'grass',
+            'canvas': 'benchmark-grass-gtx-1050ti-m',
+            'data': [
+                143.00,
+                442.91,
+                136.28,
+                90.681,
+                78.036,
+                82.168,
+                69.535
             ]
         },
         {
@@ -254,6 +304,20 @@ var bench_data = [
                 81.911,
                 81.454,
                 1688.5
+            ]
+        },
+        {
+            'device': 'NVIDIA GTX 1050 Ti Mobile',
+            'bench': 'toronto',
+            'canvas': 'benchmark-toronto-gtx-1050ti-m',
+            'data': [
+                2411.7,
+                390.05,
+                128.36,
+                84.678,
+                71.489,
+                72.640,
+                1718.3
             ]
         },
         {
