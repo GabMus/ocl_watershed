@@ -90,11 +90,13 @@ double profile_kernel(
     double nanoseconds = time_end-time_start;
     double milliseconds = nanoseconds/1000000.0;
 
+#if 0
     std::cout << TERM_CYAN <<
             message <<
             std::setprecision(5) <<
             milliseconds << "ms" <<
             TERM_RESET << std::endl;
+#endif
 
     return milliseconds;
 }
