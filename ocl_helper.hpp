@@ -70,7 +70,7 @@ double profile_kernel(
         cl::NDRange global,
         cl::NDRange local,
         std::string message="") {
-    
+
     cl::Event event;
     int err = queue.enqueueNDRangeKernel(
                 kernel,
@@ -82,7 +82,7 @@ double profile_kernel(
     event.wait();
     queue.finish();
     cl_check(err, "Running automaton kernel ("+message+"\b\b)");
-    
+
     cl_ulong time_start = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
     cl_ulong time_end = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
     //std::cout << "\tDEBUG: "<< time_start << std::endl << "\t       " << time_end << std::endl;
@@ -101,4 +101,27 @@ double profile_kernel(
 
 cl_int round_up(int x, int y) {
     return ((x + y - 1) / y) * y;
+}
+
+float get_memory_throughput_global(int w, int h, float exec_time, bool print=true) {
+    float bytes = 10*w*h*4; // 8wh bytes (read) + 2wh bytes (write)
+    //float throughput = (bytes*1000.0)/exec_time; // *1000 is to get bytes/sec
+    float throughput = bytes/(exec_time*1000.0); // *1000 in the denominator is to get MEGAbytes/sec
+    if (print) {
+        //std::cout << "Memory throughput:\t" << throughput << " bytes/sec" << std::endl;
+        std::cout << "Memory throughput:\t" << throughput << " megabytes/sec" << std::endl;
+    }
+    return throughput;
+}
+
+float get_memory_throughput_local(int w, int h, float exec_time, int lws, bool print=true) {
+    int workgroup_num = (w*h)/lws;
+    float bytes = ((13*lws*lws - (4*lws))*workgroup_num)*4;
+    //float throughput = (bytes*1000.0)/exec_time; // *1000 is to get bytes/sec
+    float throughput = bytes/(exec_time*1000.0); // *1000 in the denominator is to get MEGAbytes/sec
+    if (print) {
+        //std::cout << "Memory throughput:\t" << throughput << " bytes/sec" << std::endl;
+        std::cout << "Memory throughput:\t" << throughput << " megabytes/sec" << std::endl;
+    }
+    return throughput;
 }

@@ -98,6 +98,9 @@ void kernel automaton_global(
     global uint* are_diff) {
 
     uint pos = get_global_id(0)+(get_global_id(1)*width);
+
+    const int iamoutofbound = get_global_id(0) >= width || get_global_id(1) >= height;
+    if (iamoutofbound) return; // failsafe (the global work sizes can be bigger than the image sizes)
     // x: north, y: east, z: south, t: west
 
     uint t0_lattice_pos = t0_lattice[pos];
@@ -177,7 +180,7 @@ void kernel automaton(
 
     uint core_cache_column = local_id0 + 1;
     uint core_cache_row    = local_id1 + 1;
-    
+
     uint local_pos = core_cache_column + (core_cache_row * cache_height);
 
     // write core pixel in cache
@@ -195,11 +198,11 @@ void kernel automaton(
 	    (int4){0, lws0 - 1, lws1 - 1, 0})
     );
 
-    /*int4 local_border_status = (int4){ 
-        get_local_id(1) == 0,                   // North 
-        get_local_id(0) == get_local_size(0)-1, // East 
-        get_local_id(1) == get_local_size(0)-1, // South 
-        get_local_id(0) == 0                    // West 
+    /*int4 local_border_status = (int4){
+        get_local_id(1) == 0,                   // North
+        get_local_id(0) == get_local_size(0)-1, // East
+        get_local_id(1) == get_local_size(0)-1, // South
+        get_local_id(0) == 0                    // West
     };*/
 
     uint4 local_neib_pos = (uint4){
@@ -296,6 +299,9 @@ void kernel automaton_image(
     const uint y = get_global_id(1);
     const uint img_size = width*height;
 
+    const int iamoutofbound = get_global_id(0) >= width || get_global_id(1) >= height;
+    if (iamoutofbound) return; // failsafe (the global work sizes can be bigger than the image sizes)
+
     //const int iamoutofbound = x >= width || y >= height;
     //if (iamoutofbound) return; // failsafe (the global work sizes can be bigger than the image sizes)
 
@@ -363,7 +369,7 @@ void kernel color_watershed(
     global const uint* labels,
     write_only image2d_t outimage) {
 
-    int pos = get_global_id(0) + (get_global_id(1) * width); 
+    int pos = get_global_id(0) + (get_global_id(1) * width);
     int index = labels[pos];
 
     uint4 pixel = read_imageui(
@@ -388,7 +394,7 @@ void kernel color_watershed_image(
     read_only image2d_t labels,
     write_only image2d_t outimage) {
 
-    int2 pos = (int2){get_global_id(0), get_global_id(1)}; 
+    int2 pos = (int2){get_global_id(0), get_global_id(1)};
     int index = read_imageui(labels, sampler, pos).x;
 
     uint4 pixel = read_imageui(
