@@ -1,0 +1,132 @@
+var bench_intel_630 = {
+"benchmark": [
+{
+"image": "grass",
+"implementation": "global",
+"size": "2",
+"device": "Intel(R) HD Graphics 630",
+"time": "325.83",
+"throughput": "916.44"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "4",
+"device": "Intel(R) HD Graphics 630",
+"time": "328.38",
+"throughput": "909.29"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "8",
+"device": "Intel(R) HD Graphics 630",
+"time": "324.23",
+"throughput": "920.94"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "16",
+"device": "Intel(R) HD Graphics 630",
+"time": "324.71",
+"throughput": "919.58"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "2",
+"device": "Intel(R) HD Graphics 630",
+"time": "3771.1",
+"throughput": "79.181"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "4",
+"device": "Intel(R) HD Graphics 630",
+"time": "1054.8",
+"throughput": "283.09"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "8",
+"device": "Intel(R) HD Graphics 630",
+"time": "542.74",
+"throughput": "550.17"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "16",
+"device": "Intel(R) HD Graphics 630",
+"time": "551.58",
+"throughput": "541.35"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "2",
+"device": "Intel(R) HD Graphics 630",
+"time": "326.33",
+"throughput": "1545.3"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "4",
+"device": "Intel(R) HD Graphics 630",
+"time": "323.94",
+"throughput": "1556.7"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "8",
+"device": "Intel(R) HD Graphics 630",
+"time": "310.17",
+"throughput": "1625.9"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "16",
+"device": "Intel(R) HD Graphics 630",
+"time": "310.42",
+"throughput": "1624.5"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "2",
+"device": "Intel(R) HD Graphics 630",
+"time": "3016.1",
+"throughput": "167.2"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "4",
+"device": "Intel(R) HD Graphics 630",
+"time": "874.07",
+"throughput": "576.94"
+},
+                {
+                "image": "grass",
+                "implementation": "global",
+                "size": "0",
+                "device": "Intel(R) HD Graphics 630",
+                "time": null,
+                "throughput": null
+                },
+                {
+                "image": "toronto",
+                "implementation": "global",
+                "size": "0",
+                "device": "Intel(R) HD Graphics 630",
+                "time": null,
+                "throughput": null
+                }
+]
+}

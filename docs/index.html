@@ -137,38 +137,19 @@ The *toronto* test shows similar results for this card, too. The only difference
 
 <div id="bench-gtx-760-toronto-table"></div>
 
-<!--
 ## Intel HD Graphics 630 (Intel i7-7700HQ)
 
 ### Grass
 
-<canvas id="benchmark-grass-intel-630"></canvas>
+<canvas id="bench-intel-630-grass"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 3606.2 |
-| Local memory caching (LWS: 2)  | 1334.4 |
-| Local memory caching (LWS: 4)  | 416.10 |
-| Local memory caching (LWS: 8)  | 151.13 |
-| Local memory caching (LWS: 16) | 102.46 |
-| Local memory caching (LWS: 32) | 94.520 |
-| Global memory                  | 3766.9 |
-
+<div id="bench-intel-630-grass-table"></div>
 
 ### Toronto
 
-<canvas id="benchmark-toronto-intel-630"></canvas>
+<canvas id="bench-intel-630-toronto"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 3606.2 |
-| Local memory caching (LWS: 2)  | 1334.4 |
-| Local memory caching (LWS: 4)  | 416.10 |
-| Local memory caching (LWS: 8)  | 151.13 |
-| Local memory caching (LWS: 16) | 102.46 |
-| Local memory caching (LWS: 32) | 94.520 |
-| Global memory                  | 3766.9 |
--->
+<div id="bench-intel-630-toronto-table"></div>
 
 # Examples
 
@@ -189,6 +170,7 @@ The *toronto* test shows similar results for this card, too. The only difference
         </div>
         <script src="./benchmarks/benchmark_gtx_960.json"></script>
         <script src="./benchmarks/benchmark_gtx_760.json"></script>
+        <script src="./benchmarks/benchmark_intel_630.json"></script>
         <script src="./benchmarks/benchmark_gtx_1050ti_mobile.json"></script>
         <script>
 document.getElementById('markdownContent').innerHTML = marked(
@@ -198,7 +180,8 @@ document.getElementById('markdownContent').innerHTML = marked(
 var benchmarks = {
     'bench-gtx-960': bench_gtx_960['benchmark'],
     'bench-gtx-1050ti-mobile': bench_gtx_1050ti_mobile['benchmark'],
-    'bench-gtx-760': bench_gtx_760['benchmark']
+    'bench-gtx-760': bench_gtx_760['benchmark'],
+    'bench-intel-630': bench_intel_630['benchmark']
 };
 
 var maincolor = "rgba(75, 192, 192, 0.8)";
@@ -224,9 +207,9 @@ var images = ["grass", "toronto"];
 Object.keys(benchmarks).map((key, index) => {
     let c_bench = benchmarks[key];
     images.map((c_img) => {
-        let img_global = {label: 'Global', data: [-1], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0};
+        let img_global = {label: 'Global', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0};
         let img_local = {label: 'Local', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[1], "lineTension": 0};
-        let img_texture = {label: 'Texture', data: [-1], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[2], "lineTension": 0};
+        let img_texture = {label: 'Texture', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[2], "lineTension": 0};
         c_bench.map((value) => {
             if (value['image'] == c_img && value['implementation'] == 'global') {
                 if (value["size"] === "0") img_global.data[0]=value['time'];
@@ -240,13 +223,21 @@ Object.keys(benchmarks).map((key, index) => {
                 else img_texture.data.push(value['time']);
             }
         });
-        datasets = [img_global, img_local, img_texture];
+        let max_lws = Math.max(img_global.data.length, img_local.data.length, img_texture.data.length);
+        let lwses = [...Array(max_lws).keys()];
+        for (let i in lwses) {
+            let isauto = lwses[i] == 0;
+            lwses[i] = `LWS: ${lwses[i] ? 2**lwses[i]: 0}`;
+            if (isauto) lwses[i] += ' (auto)';
+        }
+        let datasets = [img_global, img_local, img_texture];
+        if (img_texture.data.length<=1) datasets.pop(2);
         let table = `
-| Implementation | LWS: 0 (auto) | LWS: 2 | LWS: 4 | LWS: 8 | LWS: 16 | LWS: 32 |
+| Implementation | ${lwses.map(val => { return `${val} |` }).join('')}
 |---|---|---|---|---|---|---|
 | Global | ${img_global.data.map(val => { return `${val} |` }).join('')}
 | Local | ${img_local.data.map(val => { return `${val} |` }).join('')}
-| Texture | ${img_texture.data.map(val => { return `${val} |` }).join('')}
+${img_texture.data.length>1 ? `| Texture | ${img_texture.data.map(val => { return `${val} |` }).join('')}` : ''}
 `;
         document.getElementById(`${key}-${c_img}-table`).innerHTML=marked(table);
         new Chart(document.getElementById(`${key}-${c_img}`).getContext('2d'), {
