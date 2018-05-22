@@ -87,33 +87,17 @@ This is probably due to the fact that modern (Maxwell and later) GPUs have a bui
 
 The **texture** implementation doesn't seem to be particularly fast.
 
-<canvas id="benchmark-grass-gtx-960"></canvas>
+<canvas id="bench-gtx-960-grass"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 314.70 |
-| Local memory caching (LWS: 2)  | 442.45 |
-| Local memory caching (LWS: 4)  | 134.47 |
-| Local memory caching (LWS: 8)  | 104.27 |
-| Local memory caching (LWS: 16) | 97.286 |
-| Local memory caching (LWS: 32) | 94.387 |
-| Global memory                  | 85.289 |
+<div id="bench-gtx-960-grass-table"></div>
 
 ### Toronto
 
 Weirdly, while tests with other images (of which *grass* is a clear example) show that the **global memory** implementation tends to be the fastest, in this case all the **local memory** implementations are faster than the global memory one.
 
-<canvas id="benchmark-toronto-gtx-960"></canvas>
+<canvas id="bench-gtx-960-toronto"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 2464.6 |
-| Local memory caching (LWS: 2)  | 401.87 |
-| Local memory caching (LWS: 4)  | 141.03 |
-| Local memory caching (LWS: 8)  | 92.541 |
-| Local memory caching (LWS: 16) | 81.911 |
-| Local memory caching (LWS: 32) | 81.454 |
-| Global memory                  | 1688.5 |
+<div id="bench-gtx-960-toronto-table"></div>
 
 ## NVIDIA GTX 1050 Ti Mobile 4GB
 
@@ -125,31 +109,15 @@ As for everything else, the performance is pretty much on par with the [GTX 960]
 
 ### Grass
 
-<canvas id="benchmark-grass-gtx-1050ti-m"></canvas>
+<canvas id="bench-gtx-1050ti-mobile-grass"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 143.00 |
-| Local memory caching (LWS: 2)  | 442.91 |
-| Local memory caching (LWS: 4)  | 136.28 |
-| Local memory caching (LWS: 8)  | 90.681 |
-| Local memory caching (LWS: 16) | 78.036 |
-| Local memory caching (LWS: 32) | 82.168 |
-| Global memory                  | 69.535 |
+<div id="bench-gtx-1050ti-mobile-grass-table"></div>
 
 ### Toronto
 
-<canvas id="benchmark-toronto-gtx-1050ti-m"></canvas>
+<canvas id="bench-gtx-1050ti-mobile-toronto"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 2411.7 |
-| Local memory caching (LWS: 2)  | 390.05 |
-| Local memory caching (LWS: 4)  | 128.36 |
-| Local memory caching (LWS: 8)  | 84.678 |
-| Local memory caching (LWS: 16) | 71.489 |
-| Local memory caching (LWS: 32) | 72.640 |
-| Global memory                  | 1718.3 |
+<div id="bench-gtx-1050ti-mobile-toronto-table"></div>
 
 ## NVIDIA GTX 760 2GB
 
@@ -157,33 +125,17 @@ As for everything else, the performance is pretty much on par with the [GTX 960]
 
 As with the [GTX 960](#nvidia-gtx-960-4gb), this card also seems to be working best with the **global memory** implementation, despite the fact that it shouldn't have any hardware caching mechanism.
 
-<canvas id="benchmark-grass-gtx-760"></canvas>
+<canvas id="bench-gtx-760-grass"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 292.43 |
-| Local memory caching (LWS: 2)  | 1513.0 |
-| Local memory caching (LWS: 4)  | 464.19 |
-| Local memory caching (LWS: 8)  | 161.69 |
-| Local memory caching (LWS: 16) | 107.81 |
-| Local memory caching (LWS: 32) | 94.520 |
-| Global memory                  | 74.223 |
+<div id="bench-gtx-760-grass-table"></div>
 
 ### Toronto
 
 The *toronto* test shows similar results for this card, too. The only difference worth noting is that the **texture** implementation is slightly faster than the **global memory** one.
 
-<canvas id="benchmark-toronto-gtx-760"></canvas>
+<canvas id="bench-gtx-760-toronto"></canvas>
 
-| Automaton implementation | Execution Time (ms) |
-| --- | --- |
-| Texture memory                 | 3606.2 |
-| Local memory caching (LWS: 2)  | 1334.4 |
-| Local memory caching (LWS: 4)  | 416.10 |
-| Local memory caching (LWS: 8)  | 151.13 |
-| Local memory caching (LWS: 16) | 102.46 |
-| Local memory caching (LWS: 32) | 94.520 |
-| Global memory                  | 3766.9 |
+<div id="bench-gtx-760-toronto-table"></div>
 
 <!--
 ## Intel HD Graphics 630 (Intel i7-7700HQ)
@@ -218,16 +170,6 @@ The *toronto* test shows similar results for this card, too. The only difference
 | Global memory                  | 3766.9 |
 -->
 
-## Device comparison graph
-
-### Grass
-
-<canvas id="benchmark-all-grass"></canvas>
-
-### Toronto
-
-<canvas id="benchmark-all-toronto"></canvas>
-
 # Examples
 
 | Original | Watershed |
@@ -245,22 +187,29 @@ The *toronto* test shows similar results for this card, too. The only difference
 *Charts powered by [Chart.js](https://www.chartjs.org/). Chart.js is licensed under [MIT](./Chartjs_LICENSE.txt).*
 
         </div>
+        <script src="./benchmarks/benchmark_gtx_960.json"></script>
+        <script src="./benchmarks/benchmark_gtx_760.json"></script>
+        <script src="./benchmarks/benchmark_gtx_1050ti_mobile.json"></script>
         <script>
 document.getElementById('markdownContent').innerHTML = marked(
     document.getElementById('markdownContent').innerHTML,
     {"sanitize": false}
 );
+var benchmarks = {
+    'bench-gtx-960': bench_gtx_960['benchmark'],
+    'bench-gtx-1050ti-mobile': bench_gtx_1050ti_mobile['benchmark'],
+    'bench-gtx-760': bench_gtx_760['benchmark']
+};
 
 var maincolor = "rgba(75, 192, 192, 0.8)";
 var bordermaincolor = "rgba(75, 100, 75, 1)";
 var benchlabels = [
-    "Texture memory",
-    "Local memory caching (LWS: 2)",
-    "Local memory caching (LWS: 4)",
-    "Local memory caching (LWS: 8)",
-    "Local memory caching (LWS: 16)",
-    "Local memory caching (LWS: 32)",
-    "Global memory"
+    "LWS: 0 (auto)",
+    "LWS: 2",
+    "LWS: 4",
+    "LWS: 8",
+    "LWS: 16",
+    "LWS: 32"
 ];
 var exectimelabel = "Execution time (ms)";
 
@@ -270,138 +219,45 @@ var multicolor = [
     "rgba(243, 175, 129, 0.8)"
 ];
 
-var multicolorborder = [
-    "rgba(44, 155, 144, 1)",
-    "rgba(155, 44, 111, 1)",
-    "rgba(155, 88, 44, 1)"
-];
+var images = ["grass", "toronto"];
 
-var numdevices = 3;
-
-var bench_data = [
-    [
-        {
-            'device': 'NVIDIA GTX 960',
-            'bench': 'grass',
-            'canvas': 'benchmark-grass-gtx-960',
-            'data': [
-                314.7,
-                442.45,
-                134.47,
-                104.27,
-                97.286,
-                94.387,
-                85.289
-            ]
-        },
-        {
-            'device': 'NVIDIA GTX 1050 Ti Mobile',
-            'bench': 'grass',
-            'canvas': 'benchmark-grass-gtx-1050ti-m',
-            'data': [
-                143.00,
-                442.91,
-                136.28,
-                90.681,
-                78.036,
-                82.168,
-                69.535
-            ]
-        },
-        {
-            'device': 'NVIDIA GTX 760',
-            'bench': 'grass',
-            'canvas': 'benchmark-grass-gtx-760',
-            'data': [
-                292.43,
-                1513.0,
-                464.19,
-                161.69,
-                107.81,
-                94.520,
-                74.223
-            ]
-        }
-    ],
-    [
-        {
-            'device': 'NVIDIA GTX 960',
-            'bench': 'toronto',
-            'canvas': 'benchmark-toronto-gtx-960',
-            'data': [
-                2464.6,
-                401.87,
-                141.03,
-                92.541,
-                81.911,
-                81.454,
-                1688.5
-            ]
-        },
-        {
-            'device': 'NVIDIA GTX 1050 Ti Mobile',
-            'bench': 'toronto',
-            'canvas': 'benchmark-toronto-gtx-1050ti-m',
-            'data': [
-                2411.7,
-                390.05,
-                128.36,
-                84.678,
-                71.489,
-                72.640,
-                1718.3
-            ]
-        },
-        {
-            'device': 'NVIDIA GTX 760',
-            'bench': 'toronto',
-            'canvas': 'benchmark-toronto-gtx-760',
-            'data': [
-                3606.2,
-                1334.4,
-                416.10,
-                151.13,
-                102.46,
-                94.520,
-                3766.9
-            ]
-        }
-    ]
-];
-
-var canvas_data_dict = bench_data[0].concat(bench_data[1]);
-
-canvas_data_dict.map(i => {
-    new Chart(document.getElementById(i.canvas).getContext('2d'), {
-    	"type": "horizontalBar",
-    	"data": {
-    		"labels": benchlabels,
-    		"datasets": [{
-    			"label": exectimelabel,
-    			"data": i.data,
-    			"backgroundColor": maincolor
-    		}]
-    	}
+Object.keys(benchmarks).map((key, index) => {
+    let c_bench = benchmarks[key];
+    images.map((c_img) => {
+        let img_global = {label: 'Global', data: [-1], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0};
+        let img_local = {label: 'Local', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[1], "lineTension": 0};
+        let img_texture = {label: 'Texture', data: [-1], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[2], "lineTension": 0};
+        c_bench.map((value) => {
+            if (value['image'] == c_img && value['implementation'] == 'global') {
+                if (value["size"] === "0") img_global.data[0]=value['time'];
+                else img_global.data.push(value['time']);
+            }
+            else if (value['image'] == c_img && value['implementation'] == 'local') {
+                img_local.data.push(value['time']);
+            }
+            else if (value['image'] == c_img && value['implementation'] == 'image') {
+                if (value["size"] === "0") img_texture.data[0]=value['time'];
+                else img_texture.data.push(value['time']);
+            }
+        });
+        datasets = [img_global, img_local, img_texture];
+        let table = `
+| Implementation | LWS: 0 (auto) | LWS: 2 | LWS: 4 | LWS: 8 | LWS: 16 | LWS: 32 |
+|---|---|---|---|---|---|---|
+| Global | ${img_global.data.map(val => { return `${val} |` }).join('')}
+| Local | ${img_local.data.map(val => { return `${val} |` }).join('')}
+| Texture | ${img_texture.data.map(val => { return `${val} |` }).join('')}
+`;
+        document.getElementById(`${key}-${c_img}-table`).innerHTML=marked(table);
+        new Chart(document.getElementById(`${key}-${c_img}`).getContext('2d'), {
+            "type": "line",
+            "data": {
+                "labels": benchlabels,
+                "datasets": datasets
+            }
+        });
     });
 });
-
-bench_data.map(group => {
-    new Chart(document.getElementById(`benchmark-all-${group[0].bench}`).getContext('2d'), {
-        "type": "horizontalBar",
-        "data": {
-            "labels": benchlabels,
-            "datasets": group.map((i, index) => {
-                console.log(i);
-                return {
-                    "label": i.device,
-                    "data": i.data,
-                    "backgroundColor": multicolor[index%numdevices]
-                };
-            })
-        }
-    });
-});
-
         </script>
     </body>
 </html>

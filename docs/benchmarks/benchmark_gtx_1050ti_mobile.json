@@ -1,0 +1,276 @@
+var bench_gtx_1050ti_mobile = {
+"benchmark": [
+{
+"image": "grass",
+"implementation": "global",
+"size": "2",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "69.96",
+"throughput": "4268.1"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "4",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "68.482",
+"throughput": "4360.3"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "8",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "67.945",
+"throughput": "4394.7"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "16",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "68.039",
+"throughput": "4388.6"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "32",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "68.138",
+"throughput": "4382.3"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "2",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "442.71",
+"throughput": "674.48"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "4",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "136.31",
+"throughput": "2190.5"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "8",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "90.72",
+"throughput": "3291.4"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "16",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "78.089",
+"throughput": "3823.8"
+},
+{
+"image": "grass",
+"implementation": "local",
+"size": "32",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "82.232",
+"throughput": "3631.2"
+},
+{
+"image": "grass",
+"implementation": "image",
+"size": "2",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "142.03",
+"throughput": "2102.4"
+},
+{
+"image": "grass",
+"implementation": "image",
+"size": "4",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "141.95",
+"throughput": "2103.5"
+},
+{
+"image": "grass",
+"implementation": "image",
+"size": "8",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "141.99",
+"throughput": "2102.9"
+},
+{
+"image": "grass",
+"implementation": "image",
+"size": "16",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "141.98",
+"throughput": "2103.1"
+},
+{
+"image": "grass",
+"implementation": "image",
+"size": "32",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "142.01",
+"throughput": "2102.6"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "2",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "60",
+"throughput": "8404.8"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "4",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "484.01",
+"throughput": "1041.9"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "8",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "66.534",
+"throughput": "7579.3"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "16",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "66.527",
+"throughput": "7580.3"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "32",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "59.977",
+"throughput": "8408.1"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "2",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "390.08",
+"throughput": "1292.8"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "4",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "128.39",
+"throughput": "3927.8"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "8",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "84.716",
+"throughput": "5952.7"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "16",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "71.538",
+"throughput": "7049.2"
+},
+{
+"image": "toronto",
+"implementation": "local",
+"size": "32",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "72.742",
+"throughput": "6932.5"
+},
+{
+"image": "toronto",
+"implementation": "image",
+"size": "2",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "130.35",
+"throughput": "3868.9"
+},
+{
+"image": "toronto",
+"implementation": "image",
+"size": "4",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "602.81",
+"throughput": "836.57"
+},
+{
+"image": "toronto",
+"implementation": "image",
+"size": "8",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "123.66",
+"throughput": "4078"
+},
+{
+"image": "toronto",
+"implementation": "image",
+"size": "16",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "123.59",
+"throughput": "4080.4"
+},
+{
+"image": "toronto",
+"implementation": "image",
+"size": "32",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "126.17",
+"throughput": "3996.8"
+},
+{
+"image": "grass",
+"implementation": "global",
+"size": "0",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "68.033",
+"throughput": "4389.1"
+},
+{
+"image": "grass",
+"implementation": "image",
+"size": "0",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "141.92",
+"throughput": "2104"
+},
+{
+"image": "toronto",
+"implementation": "global",
+"size": "0",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "59.991",
+"throughput": "8406.1"
+},
+{
+"image": "toronto",
+"implementation": "image",
+"size": "0",
+"device": "GeForce GTX 1050 Ti Mobile",
+"time": "130.53",
+"throughput": "3863.5"
+}
+]
+}

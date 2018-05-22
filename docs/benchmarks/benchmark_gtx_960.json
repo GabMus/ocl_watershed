@@ -1,0 +1,276 @@
+var bench_gtx_960 = {
+    "benchmark": [
+        {
+            "image": "grass",
+            "implementation": "global",
+            "size": "2",
+            "device": "GeForce GTX 960",
+            "time": "83.699",
+            "throughput": "3567.5"
+        },
+        {
+            "image": "grass",
+            "implementation": "global",
+            "size": "4",
+            "device": "GeForce GTX 960",
+            "time": "82.462",
+            "throughput": "3621"
+        },
+        {
+            "image": "grass",
+            "implementation": "global",
+            "size": "8",
+            "device": "GeForce GTX 960",
+            "time": "83.704",
+            "throughput": "3567.3"
+        },
+        {
+            "image": "grass",
+            "implementation": "global",
+            "size": "16",
+            "device": "GeForce GTX 960",
+            "time": "81.221",
+            "throughput": "3676.4"
+        },
+        {
+            "image": "grass",
+            "implementation": "global",
+            "size": "32",
+            "device": "GeForce GTX 960",
+            "time": "82.564",
+            "throughput": "3616.6"
+        },
+        {
+            "image": "grass",
+            "implementation": "local",
+            "size": "2",
+            "device": "GeForce GTX 960",
+            "time": "447.65",
+            "throughput": "667.03"
+        },
+        {
+            "image": "grass",
+            "implementation": "local",
+            "size": "4",
+            "device": "GeForce GTX 960",
+            "time": "138.55",
+            "throughput": "2155.1"
+        },
+        {
+            "image": "grass",
+            "implementation": "local",
+            "size": "8",
+            "device": "GeForce GTX 960",
+            "time": "107.44",
+            "throughput": "2779.2"
+        },
+        {
+            "image": "grass",
+            "implementation": "local",
+            "size": "16",
+            "device": "GeForce GTX 960",
+            "time": "97.559",
+            "throughput": "3060.7"
+        },
+        {
+            "image": "grass",
+            "implementation": "local",
+            "size": "32",
+            "device": "GeForce GTX 960",
+            "time": "93.504",
+            "throughput": "3193.4"
+        },
+        {
+            "image": "grass",
+            "implementation": "image",
+            "size": "2",
+            "device": "GeForce GTX 960",
+            "time": "315.53",
+            "throughput": "946.35"
+        },
+        {
+            "image": "grass",
+            "implementation": "image",
+            "size": "4",
+            "device": "GeForce GTX 960",
+            "time": "316.5",
+            "throughput": "943.43"
+        },
+        {
+            "image": "grass",
+            "implementation": "image",
+            "size": "8",
+            "device": "GeForce GTX 960",
+            "time": "313.86",
+            "throughput": "951.38"
+        },
+        {
+            "image": "grass",
+            "implementation": "image",
+            "size": "16",
+            "device": "GeForce GTX 960",
+            "time": "314.8",
+            "throughput": "948.53"
+        },
+        {
+            "image": "grass",
+            "implementation": "image",
+            "size": "32",
+            "device": "GeForce GTX 960",
+            "time": "314.92",
+            "throughput": "948.18"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "2",
+            "device": "GeForce GTX 960",
+            "time": "76.333",
+            "throughput": "6606.4"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "4",
+            "device": "GeForce GTX 960",
+            "time": "464.83",
+            "throughput": "1084.9"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "8",
+            "device": "GeForce GTX 960",
+            "time": "74.933",
+            "throughput": "6729.8"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "16",
+            "device": "GeForce GTX 960",
+            "time": "74.968",
+            "throughput": "6726.7"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "32",
+            "device": "GeForce GTX 960",
+            "time": "76.22",
+            "throughput": "6616.2"
+        },
+        {
+            "image": "toronto",
+            "implementation": "local",
+            "size": "2",
+            "device": "GeForce GTX 960",
+            "time": "404.16",
+            "throughput": "1247.8"
+        },
+        {
+            "image": "toronto",
+            "implementation": "local",
+            "size": "4",
+            "device": "GeForce GTX 960",
+            "time": "144.15",
+            "throughput": "3498.4"
+        },
+        {
+            "image": "toronto",
+            "implementation": "local",
+            "size": "8",
+            "device": "GeForce GTX 960",
+            "time": "95.302",
+            "throughput": "5291.4"
+        },
+        {
+            "image": "toronto",
+            "implementation": "local",
+            "size": "16",
+            "device": "GeForce GTX 960",
+            "time": "83.739",
+            "throughput": "6022.1"
+        },
+        {
+            "image": "toronto",
+            "implementation": "local",
+            "size": "32",
+            "device": "GeForce GTX 960",
+            "time": "81.143",
+            "throughput": "6214.8"
+        },
+        {
+            "image": "toronto",
+            "implementation": "image",
+            "size": "2",
+            "device": "GeForce GTX 960",
+            "time": "285.54",
+            "throughput": "1766.1"
+        },
+        {
+            "image": "toronto",
+            "implementation": "image",
+            "size": "4",
+            "device": "GeForce GTX 960",
+            "time": "616.23",
+            "throughput": "818.34"
+        },
+        {
+            "image": "toronto",
+            "implementation": "image",
+            "size": "8",
+            "device": "GeForce GTX 960",
+            "time": "231.72",
+            "throughput": "2176.3"
+        },
+        {
+            "image": "toronto",
+            "implementation": "image",
+            "size": "16",
+            "device": "GeForce GTX 960",
+            "time": "231.79",
+            "throughput": "2175.6"
+        },
+        {
+            "image": "toronto",
+            "implementation": "image",
+            "size": "32",
+            "device": "GeForce GTX 960",
+            "time": "274.02",
+            "throughput": "1840.3"
+        },
+        {
+            "image": "grass",
+            "implementation": "global",
+            "size": "0",
+            "device": "GeForce GTX 960",
+            "time": "85.782",
+            "throughput": "3480.9"
+        },
+        {
+            "image": "grass",
+            "implementation": "image",
+            "size": "0",
+            "device": "GeForce GTX 960",
+            "time": "317.46",
+            "throughput": "940.58"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "0",
+            "device": "GeForce GTX 960",
+            "time": "72.096",
+            "throughput": "6994.6"
+        },
+        {
+            "image": "toronto",
+            "implementation": "image",
+            "size": "0",
+            "device": "GeForce GTX 960",
+            "time": "285.31",
+            "throughput": "1767.5"
+        }
+    ]
+}

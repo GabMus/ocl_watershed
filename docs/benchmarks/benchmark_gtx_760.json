@@ -1,0 +1,276 @@
+var bench_gtx_760 = {
+    "benchmark": [
+        {
+        "image": "grass",
+        "implementation": "global",
+        "size": "2",
+        "device": "GeForce GTX 760",
+        "time": "78.478",
+        "throughput": "3804.9"
+        },
+        {
+        "image": "grass",
+        "implementation": "global",
+        "size": "4",
+        "device": "GeForce GTX 760",
+        "time": "78.322",
+        "throughput": "3812.4"
+        },
+        {
+        "image": "grass",
+        "implementation": "global",
+        "size": "8",
+        "device": "GeForce GTX 760",
+        "time": "77.696",
+        "throughput": "3843.2"
+        },
+        {
+        "image": "grass",
+        "implementation": "global",
+        "size": "16",
+        "device": "GeForce GTX 760",
+        "time": "78.373",
+        "throughput": "3810"
+        },
+        {
+        "image": "grass",
+        "implementation": "global",
+        "size": "32",
+        "device": "GeForce GTX 760",
+        "time": "78.491",
+        "throughput": "3804.3"
+        },
+        {
+        "image": "grass",
+        "implementation": "local",
+        "size": "2",
+        "device": "GeForce GTX 760",
+        "time": "1534",
+        "throughput": "194.65"
+        },
+        {
+        "image": "grass",
+        "implementation": "local",
+        "size": "4",
+        "device": "GeForce GTX 760",
+        "time": "462.66",
+        "throughput": "645.39"
+        },
+        {
+        "image": "grass",
+        "implementation": "local",
+        "size": "8",
+        "device": "GeForce GTX 760",
+        "time": "162.04",
+        "throughput": "1842.8"
+        },
+        {
+        "image": "grass",
+        "implementation": "local",
+        "size": "16",
+        "device": "GeForce GTX 760",
+        "time": "108.98",
+        "throughput": "2739.9"
+        },
+        {
+        "image": "grass",
+        "implementation": "local",
+        "size": "32",
+        "device": "GeForce GTX 760",
+        "time": "97.575",
+        "throughput": "3060.2"
+        },
+        {
+        "image": "grass",
+        "implementation": "image",
+        "size": "2",
+        "device": "GeForce GTX 760",
+        "time": "272.24",
+        "throughput": "1096.8",
+        },
+        {
+        "image": "grass",
+        "implementation": "image",
+        "size": "4",
+        "device": "GeForce GTX 760",
+        "time": "272.78",
+        "throughput": "1094.6",
+        },
+        {
+        "image": "grass",
+        "implementation": "image",
+        "size": "8",
+        "device": "GeForce GTX 760",
+        "time": "272.38",
+        "throughput": "1096.2",
+        },
+        {
+        "image": "grass",
+        "implementation": "image",
+        "size": "16",
+        "device": "GeForce GTX 760",
+        "time": "273.02",
+        "throughput": "1093.7",
+        },
+        {
+        "image": "grass",
+        "implementation": "image",
+        "size": "32",
+        "device": "GeForce GTX 760",
+        "time": "269.38",
+        "throughput": "1108.5",
+        },
+        {
+        "image": "toronto",
+        "implementation": "global",
+        "size": "2",
+        "device": "GeForce GTX 760",
+        "time": "62.522",
+        "throughput": "8065.7",
+        },
+        {
+        "image": "toronto",
+        "implementation": "global",
+        "size": "4",
+        "device": "GeForce GTX 760",
+        "time": "1067.1",
+        "throughput": "472.56",
+        },
+        {
+        "image": "toronto",
+        "implementation": "global",
+        "size": "8",
+        "device": "GeForce GTX 760",
+        "time": "76.074",
+        "throughput": "6628.9",
+        },
+        {
+        "image": "toronto",
+        "implementation": "global",
+        "size": "16",
+        "device": "GeForce GTX 760",
+        "time": "76.444",
+        "throughput": "6596.9",
+        },
+        {
+        "image": "toronto",
+        "implementation": "global",
+        "size": "32",
+        "device": "GeForce GTX 760",
+        "time": "62.136",
+        "throughput": "8115.9",
+        },
+        {
+        "image": "toronto",
+        "implementation": "local",
+        "size": "2",
+        "device": "GeForce GTX 760",
+        "time": "1355.1",
+        "throughput": "372.14"
+        },
+        {
+        "image": "toronto",
+        "implementation": "local",
+        "size": "4",
+        "device": "GeForce GTX 760",
+        "time": "418.45",
+        "throughput": "1205.1"
+        },
+        {
+        "image": "toronto",
+        "implementation": "local",
+        "size": "8",
+        "device": "GeForce GTX 760",
+        "time": "153.76",
+        "throughput": "3279.7"
+        },
+        {
+        "image": "toronto",
+        "implementation": "local",
+        "size": "16",
+        "device": "GeForce GTX 760",
+        "time": "105.14",
+        "throughput": "4796.2"
+        },
+        {
+        "image": "toronto",
+        "implementation": "local",
+        "size": "32",
+        "device": "GeForce GTX 760",
+        "time": "90.557",
+        "throughput": "5568.7"
+        },
+        {
+        "image": "toronto",
+        "implementation": "image",
+        "size": "2",
+        "device": "GeForce GTX 760",
+        "time": "251.38",
+        "throughput": "2006.1",
+        },
+        {
+        "image": "toronto",
+        "implementation": "image",
+        "size": "4",
+        "device": "GeForce GTX 760",
+        "time": "980.69",
+        "throughput": "514.22",
+        },
+        {
+        "image": "toronto",
+        "implementation": "image",
+        "size": "8",
+        "device": "GeForce GTX 760",
+        "time": "238.72",
+        "throughput": "2112.5",
+        },
+        {
+        "image": "toronto",
+        "implementation": "image",
+        "size": "16",
+        "device": "GeForce GTX 760",
+        "time": "237.93",
+        "throughput": "2119.4"
+        },
+        {
+        "image": "toronto",
+        "implementation": "image",
+        "size": "32",
+        "device": "GeForce GTX 760",
+        "time": "234.07",
+        "throughput": "2154.4"
+        },
+        {
+        "image": "grass",
+        "implementation": "global",
+        "size": "0",
+        "device": "GeForce GTX 760",
+        "time": "67.393",
+        "throughput": "4430.7"
+        },
+        {
+        "image": "grass",
+        "implementation": "image",
+        "size": "0",
+        "device": "GeForce GTX 760",
+        "time": "277.53",
+        "throughput": "1075.9"
+        },
+        {
+        "image": "toronto",
+        "implementation": "global",
+        "size": "0",
+        "device": "GeForce GTX 760",
+        "time": "60.837",
+        "throughput": "8289.2"
+        },
+        {
+        "image": "toronto",
+        "implementation": "image",
+        "size": "0",
+        "device": "GeForce GTX 760",
+        "time": "250.03",
+        "throughput": "2016.9"
+        }
+    ]
+};
