@@ -87,7 +87,13 @@ This is probably due to the fact that modern (Maxwell and later) GPUs have a bui
 
 The **texture** implementation doesn't seem to be particularly fast.
 
+#### Time (ms)
+
 <canvas id="bench-gtx-960-grass"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-gtx-960-grass-throughput"></canvas>
 
 <div id="bench-gtx-960-grass-table"></div>
 
@@ -95,7 +101,13 @@ The **texture** implementation doesn't seem to be particularly fast.
 
 Weirdly, while tests with other images (of which *grass* is a clear example) show that the **global memory** implementation tends to be the fastest, in this case all the **local memory** implementations are faster than the global memory one.
 
+#### Time (ms)
+
 <canvas id="bench-gtx-960-toronto"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-gtx-960-toronto-throughput"></canvas>
 
 <div id="bench-gtx-960-toronto-table"></div>
 
@@ -109,13 +121,25 @@ As for everything else, the performance is pretty much on par with the [GTX 960]
 
 ### Grass
 
+#### Time (ms)
+
 <canvas id="bench-gtx-1050ti-mobile-grass"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-gtx-1050ti-mobile-grass-throughput"></canvas>
 
 <div id="bench-gtx-1050ti-mobile-grass-table"></div>
 
 ### Toronto
 
+#### Time (ms)
+
 <canvas id="bench-gtx-1050ti-mobile-toronto"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-gtx-1050ti-mobile-toronto-throughput"></canvas>
 
 <div id="bench-gtx-1050ti-mobile-toronto-table"></div>
 
@@ -125,7 +149,13 @@ As for everything else, the performance is pretty much on par with the [GTX 960]
 
 As with the [GTX 960](#nvidia-gtx-960-4gb), this card also seems to be working best with the **global memory** implementation, despite the fact that it shouldn't have any hardware caching mechanism.
 
+#### Time (ms)
+
 <canvas id="bench-gtx-760-grass"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-gtx-760-grass-throughput"></canvas>
 
 <div id="bench-gtx-760-grass-table"></div>
 
@@ -133,7 +163,13 @@ As with the [GTX 960](#nvidia-gtx-960-4gb), this card also seems to be working b
 
 The *toronto* test shows similar results for this card, too. The only difference worth noting is that the **texture** implementation is slightly faster than the **global memory** one.
 
+#### Time (ms)
+
 <canvas id="bench-gtx-760-toronto"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-gtx-760-toronto-throughput"></canvas>
 
 <div id="bench-gtx-760-toronto-table"></div>
 
@@ -141,13 +177,25 @@ The *toronto* test shows similar results for this card, too. The only difference
 
 ### Grass
 
+#### Time (ms)
+
 <canvas id="bench-intel-630-grass"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-intel-630-grass-throughput"></canvas>
 
 <div id="bench-intel-630-grass-table"></div>
 
 ### Toronto
 
+#### Time (ms)
+
 <canvas id="bench-intel-630-toronto"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="bench-intel-630-toronto-throughput"></canvas>
 
 <div id="bench-intel-630-toronto-table"></div>
 
@@ -210,17 +258,35 @@ Object.keys(benchmarks).map((key, index) => {
         let img_global = {label: 'Global', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0};
         let img_local = {label: 'Local', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[1], "lineTension": 0};
         let img_texture = {label: 'Texture', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[2], "lineTension": 0};
+        
+        let thr_global = {label: 'Global', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0};
+        let thr_local = {label: 'Local', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[1], "lineTension": 0};
+        let thr_texture = {label: 'Texture', data: [null], "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[2], "lineTension": 0};
+
         c_bench.map((value) => {
             if (value['image'] == c_img && value['implementation'] == 'global') {
-                if (value["size"] === "0") img_global.data[0]=value['time'];
-                else img_global.data.push(value['time']);
+                if (value["size"] === "0") {
+                    img_global.data[0]=value['time'];
+                    thr_global.data[0]=value['throughput'];
+                }
+                else {
+                    img_global.data.push(value['time']);
+                    thr_global.data.push(value['throughput']);
+                }
             }
             else if (value['image'] == c_img && value['implementation'] == 'local') {
                 img_local.data.push(value['time']);
+                thr_local.data.push(value['throughput']);
             }
             else if (value['image'] == c_img && value['implementation'] == 'image') {
-                if (value["size"] === "0") img_texture.data[0]=value['time'];
-                else img_texture.data.push(value['time']);
+                if (value["size"] === "0") {
+                    img_texture.data[0]=value['time'];
+                    thr_texture.data[0]=value['throughput'];
+                }
+                else {
+                    img_texture.data.push(value['time']);
+                    thr_texture.data.push(value['throughput']);
+                }
             }
         });
         let max_lws = Math.max(img_global.data.length, img_local.data.length, img_texture.data.length);
@@ -231,13 +297,14 @@ Object.keys(benchmarks).map((key, index) => {
             if (isauto) lwses[i] += ' (auto)';
         }
         let datasets = [img_global, img_local, img_texture];
+        let datasets_thr = [thr_global, thr_local, thr_texture];
         if (img_texture.data.length<=1) datasets.pop(2);
         let table = `
 | Implementation | ${lwses.map(val => { return `${val} |` }).join('')}
 |---|---|---|---|---|---|---|
-| Global | ${img_global.data.map(val => { return `${val} |` }).join('')}
-| Local | ${img_local.data.map(val => { return `${val} |` }).join('')}
-${img_texture.data.length>1 ? `| Texture | ${img_texture.data.map(val => { return `${val} |` }).join('')}` : ''}
+| **Global** | ${img_global.data.map((val, i) => { return val ? `${val} ms<br />${thr_global.data[i]} MB/s |` : 'N/A |' }).join('')}
+| **Local** | ${img_local.data.map((val, i) => { return val ? `${val} ms<br />${thr_local.data[i]} MB/s |` : 'N/A |' }).join('')}
+${img_texture.data.length>1 ? `| **Texture** | ${img_texture.data.map((val, i) => { return val ? `${val} ms<br />${thr_texture.data[i]} MB/s |` : 'N/A |' }).join('')}` : ''}
 `;
         document.getElementById(`${key}-${c_img}-table`).innerHTML=marked(table);
         new Chart(document.getElementById(`${key}-${c_img}`).getContext('2d'), {
@@ -245,6 +312,13 @@ ${img_texture.data.length>1 ? `| Texture | ${img_texture.data.map(val => { retur
             "data": {
                 "labels": benchlabels,
                 "datasets": datasets
+            }
+        });
+        new Chart(document.getElementById(`${key}-${c_img}-throughput`).getContext('2d'), {
+            "type": "line",
+            "data": {
+                "labels": benchlabels,
+                "datasets": datasets_thr
             }
         });
     });
