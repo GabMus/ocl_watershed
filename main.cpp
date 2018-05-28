@@ -164,7 +164,7 @@ int main(int argc, const char** argv) {
         exit(1);
     }
 
-#if DEBUG
+#if 0
     std::cout << "Program build log:\n" <<
         program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) <<
         std::endl << std::endl;
@@ -189,8 +189,8 @@ int main(int argc, const char** argv) {
             cl::NDRange(bmp_width, bmp_height),
             cl::NullRange);
 
-    //queue.finish();
 
+    //queue.finish();
     kernel_make_gradient.setArg(0, cl_luma_image);
     kernel_make_gradient.setArg(1, cl_gradient_image);
 
@@ -223,16 +223,18 @@ int main(int argc, const char** argv) {
     cl_int gmem_gws_width;
     cl_int gmem_gws_height;
     cl_int gmem_lws;
+    
+    // Preferred Group Size Multiple
+    cl_int pref_gs_mult = kernel_automaton.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+            default_device,
+            &err);
+    cl_check(err, "Getting preferred group size multiple");
+
 
     if (automaton_memory == "global" || automaton_memory == "image") {
 
         if (lws_cli) {
-            // Preferred Group Size Multiple
-            cl_int pref_gs_mult = kernel_automaton.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
-                    default_device,
-                    &err);
-            cl_check(err, "Getting preferred group size multiple");
-
+           
             gmem_lws = lws_cli ? lws_cli : pref_gs_mult;
             gmem_gws_width = round_up(bmp_width, gmem_lws);
             gmem_gws_height = round_up(bmp_height, gmem_lws);
@@ -246,8 +248,8 @@ int main(int argc, const char** argv) {
         }
         else {
             gmem_local_ndrange = cl::NullRange;
-            gmem_gws_width = round_up(bmp_width, 2);
-            gmem_gws_height = round_up(bmp_height, 2);
+            gmem_gws_width = round_up(bmp_width, pref_gs_mult);
+            gmem_gws_height = round_up(bmp_height, pref_gs_mult);
         }
 
     }

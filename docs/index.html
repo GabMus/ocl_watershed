@@ -73,9 +73,15 @@ There are 3 different versions of the automaton, each one being more suited for 
 
 # Benchmarks
 
-*Note: LWS indicates the Local Work Size. All values have to be considered to the power of two.*
+*Note: LWS indicates the Local Work Size. All values have to be considered as LWS<sup>2</sup>.*
 
 For each device, I benchmarked two images (shown in the [Examples](#examples) section): *grass* and *toronto*.
+
+The memory throughput is calculated as follows (the last `* 4` represents the number of bytes in every variable read or written):
+
+| Global memory and Texture implementations | Local memory implementation |
+| --- | --- |
+| `10 * image_width * image_height * 4` | `(13 * local_work_size^2 - (4 * local_work_size)) * ((image_width * image_height) / local_work_size) * 4` |
 
 ## NVIDIA GTX 960 4GB
 
@@ -199,6 +205,22 @@ The *toronto* test shows similar results for this card, too. The only difference
 
 <div id="bench-intel-630-toronto-table"></div>
 
+# Comparison between global work sizes roundings
+
+During the development of this program I understood that when using images of particular sizes (odd sizes, big prime numbers multiples) the performance got really bad. That's why the newer versions round the global worksizes (originally equal to the image dimensions) to the next local work size multiples, or to the next even numbers if no local work size is provided. This improved the performance of these edge cases drastically and here are some plots showing the performance difference.
+
+These tests were ran on the GTX 960 using the *toronto* image.
+
+#### Time (ms)
+
+<canvas id="chart-rounding"></canvas>
+
+#### Memory throughput (MB/s)
+
+<canvas id="chart-rounding-throughput"></canvas>
+
+<div id="chart-rounding-table"></div>
+
 # Examples
 
 | Original | Watershed |
@@ -220,6 +242,7 @@ The *toronto* test shows similar results for this card, too. The only difference
         <script src="./benchmarks/benchmark_gtx_760.json"></script>
         <script src="./benchmarks/benchmark_intel_630.json"></script>
         <script src="./benchmarks/benchmark_gtx_1050ti_mobile.json"></script>
+        <script src="./benchmarks/benchmark_rounding_gtx_960.json"></script>
         <script>
 document.getElementById('markdownContent').innerHTML = marked(
     document.getElementById('markdownContent').innerHTML,
@@ -231,6 +254,8 @@ var benchmarks = {
     'bench-gtx-760': bench_gtx_760['benchmark'],
     'bench-intel-630': bench_intel_630['benchmark']
 };
+
+var bench_rounding = bench_rounding_gtx_960['benchmark'];
 
 var maincolor = "rgba(75, 192, 192, 0.8)";
 var bordermaincolor = "rgba(75, 100, 75, 1)";
@@ -323,6 +348,26 @@ ${img_texture.data.length>1 ? `| **Texture** | ${img_texture.data.map((val, i) =
         });
     });
 });
+
+new Chart(document.getElementById('chart-rounding').getContext('2d'), {
+    "type": "line",
+    "data": {
+        "labels": bench_rounding.map(val => val["gws_rounding"]),
+        "datasets": [{"label": "Global", "data": bench_rounding.map(val => val["time"]), "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0}]
+    }
+});
+new Chart(document.getElementById('chart-rounding-throughput').getContext('2d'), {
+    "type": "line",
+    "data": {
+        "labels": bench_rounding.map(val => val["gws_rounding"]),
+        "datasets": [{"label": "Global", "data": bench_rounding.map(val => val["throughput"]), "backgroundColor": "rgba(0,0,0,0)", borderColor: multicolor[0], "lineTension": 0}]
+    }
+});
+document.getElementById(`chart-rounding-table`).innerHTML=marked(`
+| Rounding | Time | Throughput |
+| --- | --- | --- |
+${bench_rounding.map(val => `| ${val["gws_rounding"]} | ${val["time"]} | ${val["throughput"]} |\n`).join('')}
+`);
         </script>
     </body>
 </html>

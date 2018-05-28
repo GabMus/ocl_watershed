@@ -1,0 +1,31 @@
+var bench_rounding_gtx_960 = {
+    "benchmark": [
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "auto",
+            "device": "GeForce GTX 960",
+            "gws_rounding": "None",
+            "time": "1718.7",
+            "throughput": "293.42"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "auto",
+            "device": "GeForce GTX 960",
+            "gws_rounding": "2",
+            "time": "72.948",
+            "throughput": "6913"
+        },
+        {
+            "image": "toronto",
+            "implementation": "global",
+            "size": "auto",
+            "device": "GeForce GTX 960",
+            "gws_rounding": "Preferred Group Size Multiple",
+            "time": "72.821",
+            "throughput": "6925"
+        }
+    ]
+};
