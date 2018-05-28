@@ -105,7 +105,7 @@ The **texture** implementation doesn't seem to be particularly fast.
 
 ### Toronto
 
-Weirdly, while tests with other images (of which *grass* is a clear example) show that the **global memory** implementation tends to be the fastest, in this case all the **local memory** implementations are faster than the global memory one.
+The difference between **global memory** and **local memory** implementations here is particularly evident when using a LWS of 4. In this case, both the **texture** and the **global memory** implementation have a spike up in timings.
 
 #### Time (ms)
 
@@ -167,7 +167,7 @@ As with the [GTX 960](#nvidia-gtx-960-4gb), this card also seems to be working b
 
 ### Toronto
 
-The *toronto* test shows similar results for this card, too. The only difference worth noting is that the **texture** implementation is slightly faster than the **global memory** one.
+The *toronto* test shows similar results for this card, too. The only difference worth noting is that the **texture** implementation is slightly faster than the **global memory** one in the *toronto* image with a LWS of 4.
 
 #### Time (ms)
 
@@ -180,6 +180,8 @@ The *toronto* test shows similar results for this card, too. The only difference
 <div id="bench-gtx-760-toronto-table"></div>
 
 ## Intel HD Graphics 630 (Intel i7-7700HQ)
+
+Due to the very limited nature of Intel HD graphics chips, a part of the tests made with other cards is missing because it simply won't run.
 
 ### Grass
 
