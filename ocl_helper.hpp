@@ -118,12 +118,12 @@ float get_memory_throughput_global(int w, int h, float exec_time, bool print=tru
 
 float get_memory_throughput_local(int w, int h, float exec_time, int lws, bool print=true) {
     int workgroup_num = (w*h)/lws;
-    float bytes = ((13*lws*lws - (4*lws))*workgroup_num)*4;
+    float bytes = ((13*lws*lws - 4)*workgroup_num)*4;
     //float throughput = (bytes*1000.0)/exec_time; // *1000 is to get bytes/sec
     float throughput = bytes/(exec_time*1000.0); // *1000 in the denominator is to get MEGAbytes/sec
     if (print) {
         //std::cout << "Memory throughput:\t" << throughput << " bytes/sec" << std::endl;
-        std::cout << "Memory throughput:\t" << throughput << " megabytes/sec" << std::endl;
+        std::cout << "Memory throughput: " << throughput << " megabytes/sec" << std::endl;
     }
     return throughput;
 }
